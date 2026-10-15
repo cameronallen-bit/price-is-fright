@@ -658,7 +658,9 @@ a { color: var(--candy); }
    posters sit whole on a blurred copy of themselves */
 .art > img.ph-cover, .pdp-img .art > img.ph-cover { object-fit: cover; padding: 0; }
 .art > img.ph-contain { mix-blend-mode: multiply; }
-.art > img.ph-bd, .pdp-img .art > img.ph-bd, .pi-photo .art > img.ph-bd { object-fit: cover; padding: 0; filter: blur(14px) brightness(.42) saturate(1.25); transform: scale(1.25); }
+.art > img.ph-bd, .pdp-img .art > img.ph-bd, .pi-photo .art > img.ph-bd { display: none; object-fit: cover; padding: 0; filter: blur(14px) brightness(.42) saturate(1.25); transform: scale(1.25); }
+.art.fit > img.ph-bd, .art > img.ph-bd.keep { display: block; }
+.art.fit > img.ph-cover, .pdp-img .art.fit > img.ph-cover { object-fit: contain; filter: drop-shadow(0 8px 20px rgba(0,0,0,.6)); }
 .art > img.ph-poster { object-fit: contain; padding: 4%; filter: drop-shadow(0 10px 22px rgba(0,0,0,.65)); }
 .pdp-img .art > img.ph-poster { padding: 5% 0; }
 .pi-photo .art > img.ph-poster { padding: 3% 0; }
@@ -958,10 +960,10 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; z-index:
 .pi-dots i.done { background: var(--line-2); }
 .pi-dots i.dbl { border-color: var(--candy); }
 .pi-dots i.now { width: 22px; background: var(--pumpkin); border-color: var(--pumpkin); box-shadow: 0 0 10px rgba(255,122,26,.55); }
-.pi-photo { position: relative; height: clamp(150px, 24vh, 240px); border-radius: 20px; overflow: hidden; flex: none;
+.pi-photo { position: relative; height: clamp(180px, 31vh, 300px); border-radius: 20px; overflow: hidden; flex: none;
   background: radial-gradient(circle at 50% 42%, #fffaf1, #f1e4cc 80%); box-shadow: 0 16px 36px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.5);
   animation: imgIn .6s cubic-bezier(.2,1,.3,1) both; }
-.pi-photo.tall { height: clamp(180px, 30vh, 290px); }   /* a movie poster: a taller frame so it reads */
+.pi-photo.tall { height: clamp(210px, 38vh, 340px); }   /* a movie poster: a taller frame so it reads */
 .pi-photo .art { position: absolute; inset: 0; border-radius: 0; background: transparent; box-shadow: none; }
 .pi-photo .art > img { padding: 5%; }
 .pi-photo .art > img.ph-cover { padding: 0; }
@@ -2808,14 +2810,12 @@ function podiumPlan(n) {
   return { rest, restAt, step, third, second, hush, champ, done: champ + 1800 };
 }
 
-// "$10.01 over · 29% too high", for your guess against the price.
+// "$10.01 over the price", for your guess against the price (the phones show no percent or multiple).
 function verdictHTML(g, p) {
   if (!(g > 0)) return "You didn't guess this one.";
   const d = g - p;
   if (Math.abs(d) < 0.005) return '<span class="hot">Right on the money!</span>';
-  const r = g / p, x = v => (v >= 100 ? Math.round(v).toLocaleString('en-US') : trimNum(v, v >= 10 ? 0 : 1)) + '×';
-  const how = r >= 2 ? x(r) + ' the price' : r <= .5 ? x(1 / r) + ' too low' : Math.max(1, Math.round(Math.abs(r - 1) * 100)) + '% too ' + (d > 0 ? 'high' : 'low');
-  return `<b>${esc(fmtMoney(Math.abs(d)))}</b> ${d > 0 ? 'over' : 'under'} · ${how}`;
+  return `<b>${esc(fmtMoney(Math.abs(d)))}</b> ${d > 0 ? 'over' : 'under'} the price`;
 }
 /* ============================== GAME RULES ============================== */
 const N_ITEMS = ITEMS.length;
@@ -3017,7 +3017,7 @@ function joinNames(names, max = 3) {
   return names.slice(0, max).join(', ') + ' & ' + (names.length - max) + ' more';
 }
 // The callouts for one reveal, shared by the display and the host's read-aloud notes.
-function calloutsFor(i, res, room, enc) {
+function calloutsFor(i, res, room, enc, plain = false) {
   const it = itemsOf(room, enc)[i], out = [];
   if (!res || !res.n) return out;
   const close = Object.keys(res.closest || {}), high = Object.keys(res.highest || {}), bull = Object.keys(res.bull || {}), beyond = Object.keys(res.beyond || {});
@@ -3031,7 +3031,7 @@ function calloutsFor(i, res, room, enc) {
   const sameAsClose = high.length === close.length && high.every(p => res.closest[p]);
   if (high.length && !sameAsClose) {
     const g = res.scores[high[0]].g, x = g / res.price;
-    out.push({ kind: 'high', label: 'Highest guess', names: nameList(high, res), detail: fmtShort(g) + (x >= 1.95 ? ' · ' + (x >= 10 ? Math.round(x).toLocaleString('en-US') : trimNum(x, 1)) + '× the price' : ' · ' + fmtOff(g, res.price, fmtShort)) });
+    out.push({ kind: 'high', label: 'Highest guess', names: nameList(high, res), detail: fmtShort(g) + (x >= 1.95 && !plain ? ' · ' + (x >= 10 ? Math.round(x).toLocaleString('en-US') : trimNum(x, 1)) + '× the price' : ' · ' + fmtOff(g, res.price, fmtShort)) });
   }
   if (it && it.beyond) {
     out.push({ kind: 'beyond', label: it.beyond.label, names: beyond.length ? nameList(beyond, res) : [], detail: beyond.length ? (beyond.length === 1 ? 'Dreaming bigger than the advisers' : beyond.length + ' people out-dreamed the advisers') : 'Everyone stayed under it' });
@@ -3205,9 +3205,21 @@ function artHTML(it) {
   if (!list.length) return ART[it.art] || '';
   const fit = ['cover', 'poster'].includes(it.photoFit) ? it.photoFit : 'contain';
   const img = `<img class="ph-${fit}" src="${esc(list[0])}" data-id="${it.id}" data-chain="${esc(list.slice(1).join('|'))}" data-art="${esc(it.art)}" alt="${esc(it.name)}" referrerpolicy="no-referrer" decoding="async">`;
-  // a poster sits whole on a blurred, darkened copy of itself that fills the panel
-  return fit === 'poster' ? `<img class="ph-bd" src="${esc(list[0])}" data-id="${it.id}" alt="" aria-hidden="true" referrerpolicy="no-referrer" decoding="async" onerror="this.style.visibility='hidden'">` + img : img;
+  // A poster (and a scene photo whose frame would crop it too much) sits whole on a blurred, darkened copy of itself.
+  return fit === 'contain' ? img : `<img class="ph-bd${fit === 'poster' ? ' keep' : ''}" src="${esc(list[0])}" data-id="${it.id}" alt="" aria-hidden="true" referrerpolicy="no-referrer" decoding="async" onerror="this.style.visibility='hidden'">` + img;
 }
+// Every device gets the whole picture. A scene photo fills its frame when that crops off no more than a tenth of
+// it (a square photo in the big screen's square frame); in a wider or taller frame (a phone's), it's shown whole on a
+// blurred copy of itself instead, so nothing gets cut off. Rechecked when the photo loads and when the window resizes.
+function fitOne(img) {
+  const a = img.parentElement; if (!a || !img.naturalWidth || !/\bph-(cover|poster)\b/.test(img.className)) return;
+  const w = a.clientWidth, h = a.clientHeight; if (!w || !h) return;
+  const fr = w / h, ir = img.naturalWidth / img.naturalHeight;
+  a.classList.toggle('fit', img.classList.contains('ph-poster') || 1 - Math.min(fr / ir, ir / fr) > .1);
+}
+const fitArt = (root = document) => $$('.art > img.ph-cover, .art > img.ph-poster', root).forEach(fitOne);
+let fitRaf = 0;
+addEventListener('resize', () => { cancelAnimationFrame(fitRaf); fitRaf = requestAnimationFrame(() => fitArt()); });
 const photosIn = () => typeof ITEM_PHOTOS === 'object' && !!ITEM_PHOTOS;
 // An item picture that ran out of photos: the illustration (a poster's blurred backdrop just goes).
 function toArt(img) {
@@ -3234,6 +3246,7 @@ function photosArrived() {
 function wireArt(root) {
   $$('img[data-art]', root).forEach(img => {
     if (img.dataset.wired) return; img.dataset.wired = '1';
+    img.addEventListener('load', () => fitOne(img));
     img.addEventListener('error', () => {
       const rest = (img.dataset.chain || '').split('|').filter(Boolean);
       if (rest.length) { img.dataset.chain = rest.slice(1).join('|'); img.src = rest[0]; return; }
@@ -3970,7 +3983,7 @@ function PlayerApp(code0) {
         if (s && res.highest && res.highest[pid] && !(res.closest && res.closest[pid]) && res.n > 1) chips.push(`<span class="bonus gold">${ICON.up} Highest guess of the round</span>`);
         if (s && res.beyond && res.beyond[pid] && it.beyond) chips.push(`<span class="bonus gold">${ICON.rocket} ${esc(it.beyond.label)}</span>`);
         const gain = s ? s.p + s.b : 0;
-        const calls = calloutsFor(i, res, room, enc);
+        const calls = calloutsFor(i, res, room, enc, true);
         if (!res.n) calls.push({ kind: 'close', label: 'No guesses', names: ['Nobody guessed!'], detail: 'Spooky silence on this one' });
         const h = Math.max(0, calls.findIndex(c => c.kind === 'bull' || c.kind === 'close'));
         const ordered = calls.length ? [calls[h], ...calls.filter((_, k) => k !== h)] : [];
@@ -4027,7 +4040,7 @@ function PlayerApp(code0) {
         el, update,
         tick(now) { const s = stateOf(room); if (here(s) && s.phase === 'item') { paintDeal(s, now); paintAct(); paintTimer(s, now); } },
         mounted() {
-          fitRow(false, true); addEventListener('resize', onResize);
+          fitRow(false, true); fitArt(el); addEventListener('resize', onResize);
           document.body.appendChild(pill); if (io) io.observe(act);
           if (items[i + 1]) preloadPhotos([items[i + 1]]);   // the next item's photo, ready before it's needed
           update();
@@ -4532,7 +4545,7 @@ function DisplayApp(code, key) {
       return {
         el, update, tick,
         mounted() {
-          fitAll();
+          fitAll(); fitArt(el);
           if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitAll);
           update();
           const s = stateOf(room), e = store.serverNow() - (s.shownAt || 0);
