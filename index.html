@@ -6,6 +6,19 @@
 <title>The Price Is Fright</title>
 <meta name="description" content="A Halloween Price Is Right party game for Marketing Connections: one shared display, a host console, and everyone guessing along on their phones.">
 <meta name="theme-color" content="#120a1f">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="The Price Is Fright">
+<meta property="og:title" content="The Price Is Fright">
+<meta property="og:description" content="20 Halloween items. Guess the price. Play on your phone, whenever you've got ten minutes.">
+<meta property="og:url" content="https://cameronallen-bit.github.io/price-is-fright/">
+<meta property="og:image" content="https://cameronallen-bit.github.io/price-is-fright/img/share.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The Price Is Fright, Avoya Marketing, with a jack-o'-lantern">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The Price Is Fright">
+<meta name="twitter:description" content="20 Halloween items. Guess the price. Play on your phone, whenever you've got ten minutes.">
+<meta name="twitter:image" content="https://cameronallen-bit.github.io/price-is-fright/img/share.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Luckiest+Guy&family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -85,7 +98,14 @@ const GAME = {
   closestBonus: 500,
   // The encore (an optional extra round the host can start after the poll results):
   encoreFinaleDoubles: true,    // the encore's last item doubles; ending the encore early doubles nothing
-  encoreFromZero: true          // true: a separate encore board starting at zero. false: it carries in the live totals
+  encoreFromZero: true,         // true: a separate encore board starting at zero. false: it carries in the live totals
+  // Play-anytime (async) mode: the host starts it from the console, shares one link, and everyone plays all 20 items on
+  // their own phone at their own pace. Results drop when the host closes the game.
+  asyncClockSeconds: 45,        // each item's own guess clock (0 = no timer)
+  asyncClockChoices: [0, 30, 45, 60, 90],
+  asyncPollSeconds: 30,         // how often an open player page checks whether the game has closed
+  timeZone: "America/New_York", // the host enters close times in this time zone; players see them in their own
+  debugClockOffset: 0           // testing only: ms added to every clock on this page (to test a close time without waiting)
 };
 
 /* =====================================================================
@@ -1774,6 +1794,154 @@ canvas.fireworks { position: fixed; inset: 0; width: 100%; height: 100%; z-index
 .s-final .fn-rest .r { transition: opacity .4s, transform .55s cubic-bezier(.2,1.3,.4,1); }
 .bb { position: fixed; z-index: 7; pointer-events: none; color: #120a1c; filter: drop-shadow(0 0 2px rgba(255,200,110,.95)) drop-shadow(0 0 12px rgba(255,140,40,.75)); }
 .bb svg { width: 100%; display: block; animation: flapWide .24s ease-in-out infinite alternate; transform-origin: 50% 40%; }
+
+/* ============================== PLAY-ANYTIME (async) ==============================
+   The phone screens of a play-anytime game (the item page, the reveal and the podium are the live game's), the host's
+   play-anytime console, and the big screen's invite and results pages. */
+/* the phone: 20 progress dots fit beside "Item 7 of 20" */
+.p-scene.many .pi-dots { gap: 3px; }
+.p-scene.many .pi-dots i { width: 7px; height: 7px; border-width: 1.5px; }
+.p-scene.many .pi-dots i.now { width: 16px; }
+@media (max-width: 360px) { .p-scene.many .pi-dots i { width: 6px; height: 6px; } .p-scene.many .pi-dots i.now { width: 12px; } }
+.a-next { display: flex; flex-direction: column; gap: 8px; animation: resIn .6s .3s cubic-bezier(.2,1,.3,1) both; }
+.a-next .p-small { margin: 0; text-align: center; }
+.a-h3 { font-size: 22px; margin: 0 0 10px; }
+.a-done .a-tot { font-family: var(--show); color: var(--candy); line-height: 1; margin: 6px 0 4px; text-shadow: 0 4px 0 #9b3b06, 0 0 26px rgba(255,210,63,.3); }
+.a-done .a-tot b { font-weight: 400; font-size: 64px; }
+.a-done .a-tot small { font-size: 26px; }
+.a-place b { color: var(--ink); }
+.a-wait { text-align: center; }
+.a-wait .p-p b { color: var(--candy); }
+.a-wait .p-small { margin: 6px 0 0; }
+.a-notify { display: flex; align-items: center; justify-content: center; gap: 8px; }
+.a-notify svg { width: 16px; height: 16px; color: var(--candy); }
+.a-share { text-align: center; }
+.a-card { margin: 0 0 12px; padding: 12px 14px; border-radius: 14px; background: rgba(10,5,20,.55); border: 1px dashed var(--line-2); color: var(--ink-2);
+  font: 600 14px/1.5 var(--ui); white-space: pre-wrap; overflow-wrap: anywhere; text-align: left; letter-spacing: .01em; }
+.a-share .btn svg { width: 18px; height: 18px; }
+.a-share .p-small { margin: 8px 0 0; }
+.p-board .a-note { margin: 8px 4px 2px; }
+.a-rcp { padding: 0; }
+.a-rcp > summary { list-style: none; cursor: pointer; padding: 15px 18px; font-weight: 700; color: var(--ink); border-radius: 20px; display: flex; align-items: center; gap: 10px; }
+.a-rcp > summary::-webkit-details-marker { display: none; }
+.a-rcp > summary::before { content: "▸"; color: var(--muted); transition: transform .2s; }
+.a-rcp[open] > summary::before { transform: rotate(90deg); }
+.a-recap { padding: 0 12px 12px; display: flex; flex-direction: column; gap: 2px; }
+.a-recap .ar { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto auto 64px; gap: 8px; align-items: center; padding: 6px 6px; border-radius: 10px; font-size: 13px; color: var(--ink-2); }
+.a-recap .ar:nth-child(odd) { background: rgba(255,255,255,.03); }
+.a-recap .ar .n { font-family: var(--show); color: var(--muted); padding-top: 2px; }
+.a-recap .ar .t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; color: var(--ink); }
+.a-recap .ar .g { color: #d8c8ff; font-weight: 700; text-align: right; }
+.a-recap .ar .pr { color: var(--candy); font-weight: 700; text-align: right; }
+.a-recap .ar .pr:not(:empty)::before { content: "/ "; color: var(--faint); font-weight: 400; }
+.a-recap .ar .pt { text-align: right; font-family: var(--show); color: var(--slime); padding-top: 2px; }
+.a-recap .ar.bull { box-shadow: inset 0 0 0 1px rgba(255,210,63,.5); }
+.a-bonus { text-align: center; }
+.a-bonus .a-h3 { margin: 8px 0 6px; color: var(--slime); }
+.a-bl { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.a-bl li { font-size: 14px; font-weight: 600; padding: 5px 11px; border-radius: 999px; background: rgba(142,240,90,.12); border: 1px solid rgba(142,240,90,.45); color: #dfffd0; }
+.a-bl li.more { background: none; border-style: dashed; padding: 0; }
+.a-bl li.more .linkbtn { color: #dfffd0; text-decoration: none; padding: 5px 13px; font-size: 14px; }
+.a-partial { text-align: center; }
+.a-corr { text-align: center; margin: 0; }
+.a-same .p-h { font-size: 26px; }
+.a-same .p-p { margin-top: -4px; }
+.a-start { margin-top: 18px; }
+.a-sub { margin: 10px 0 0; }
+.a-sub b { color: var(--ink); }
+.offline-pill.saving { top: calc(10px + env(safe-area-inset-top)); left: 50%; right: auto; transform: translateX(-50%); background: var(--night-4); border-color: var(--line-2); color: var(--ink-2); }
+
+/* the host: the start screen's play-anytime entry, the setup card and the recent rooms */
+.h-anyline { margin: 14px auto 0 !important; font-size: 14px !important; color: var(--muted) !important; }
+.h-setup { padding: 22px 26px 24px; }
+.hs-t { margin: 0 0 6px; font-family: var(--show); font-weight: 400; font-size: 30px; color: var(--slime); text-shadow: 0 3px 0 #24620f; }
+.hs-lede { margin: 0 0 8px; color: var(--ink-2); font-size: 15px; }
+.hs-bank { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: var(--ink); white-space: nowrap; }
+.hs-bank svg { width: 14px; height: 14px; }
+.seg button { white-space: nowrap; }
+.p-join .a-same { margin-top: 22px; }
+.hs-close { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.hs-dt { font: 600 14px var(--ui); color: var(--ink); background: rgba(10,5,20,.6); border: 1px solid var(--line-2); border-radius: 10px; padding: 7px 10px; color-scheme: dark; }
+.hs-dt:focus { outline: none; border-color: var(--pumpkin); }
+.h-recent { padding: 16px 20px 14px; }
+.h-recent h3 { margin: 0 0 8px; font-size: 13px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.hr-list { display: flex; flex-direction: column; gap: 4px; }
+.hr-row { appearance: none; border: 1px solid var(--line); background: rgba(10,5,20,.35); color: var(--ink); border-radius: 12px; padding: 8px 12px; cursor: pointer; display: grid; grid-template-columns: 70px minmax(0, 1fr) auto auto; gap: 12px; align-items: center; text-align: left; font: 500 14px var(--ui); }
+.hr-row:hover { border-color: var(--pumpkin); }
+.hr-row .code { font-family: var(--show); font-size: 20px; color: var(--candy); letter-spacing: .08em; padding-top: 3px; }
+.hr-row .k { font-weight: 700; }
+.hr-row .when { color: var(--faint); font-size: 13px; white-space: nowrap; }
+.hr-row .chip { font-size: 12px; padding: 3px 9px; }
+@media (max-width: 560px) { .hr-row { grid-template-columns: 60px minmax(0, 1fr) auto; } .hr-row .when { display: none; } .h-setup .set-row { flex-direction: column; align-items: flex-start; } .hs-close { justify-content: flex-start; } }
+
+/* the host: a play-anytime game's console */
+.h-async .h-room .lab { color: var(--slime); }
+.ha-col { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.ha-share { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 22px; padding: 22px; align-items: start; }
+.ha-qr { width: 220px; height: 220px; background: #fff; border-radius: 18px; padding: 12px; box-shadow: 0 0 0 5px var(--pumpkin), 0 12px 26px rgba(0,0,0,.45); }
+.ha-qr svg { width: 100%; height: 100%; display: block; }
+.ha-sh { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.ha-sh .lab { font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.ha-url { font-size: 20px; font-weight: 700; color: var(--ink); overflow-wrap: anywhere; line-height: 1.25; }
+.ha-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.ha-prev { margin: 4px 0 0; padding: 10px 12px; border-radius: 12px; background: rgba(10,5,20,.45); border: 1px dashed var(--line-2); color: var(--ink-2); font: 500 13px/1.45 var(--ui); white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 640px) { .ha-share { grid-template-columns: minmax(0, 1fr); justify-items: center; } .ha-sh { width: 100%; } }
+.ha-when { margin: -6px 0 0; font-size: 15px; color: var(--ink-2); }
+.ha-when b { color: var(--candy); }
+.ha-top3 { margin-top: 0; }
+.ha-close .ha-prev { margin-top: 14px; }
+.ha-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.ha-chips .chip { font-size: 13px; padding: 4px 10px; }
+.ha-tools { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+.ha-q { flex: 1; min-width: 120px; font: 500 14px var(--ui); color: var(--ink); background: rgba(10,5,20,.6); border: 1px solid var(--line-2); border-radius: 10px; padding: 7px 10px; outline: none; }
+.ha-q:focus { border-color: var(--pumpkin); }
+.ha-list { max-height: 560px; }
+.ha-r { display: grid; grid-template-columns: minmax(0, 1fr) 84px 64px 26px; gap: 10px; align-items: center; padding: 6px 4px 6px 8px; border-radius: 10px; font-size: 14px; }
+.ha-nm { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
+.ha-nm .ha-sub { display: flex; min-width: 0; margin-top: 1px; }
+.ha-sub .ha-t { min-width: 0; }
+.ha-pm { display: none; }
+.ha-r:hover { background: rgba(255,255,255,.04); }
+.ha-r .n3 { font-weight: 600; font-size: 15px; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; }
+.ha-p { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.ha-bar { flex: 1; height: 7px; border-radius: 4px; background: rgba(255,255,255,.08); overflow: hidden; }
+.ha-bar i { display: block; height: 100%; border-radius: 4px; background: var(--violet); }
+.ha-of { font-size: 12px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ha-done { font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--slime); }
+.ha-r .s3 { font-family: var(--show); font-size: 16px; text-align: right; color: var(--candy); padding-top: 2px; white-space: nowrap; }
+.ha-r .s3 em { font-style: normal; font-family: var(--ui); font-size: 12px; font-weight: 800; color: var(--ink-2); margin-right: 6px; vertical-align: 1px; }
+.ha-t { font-size: 11.5px; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ha-new { color: var(--muted); }
+.ha-r .x { appearance: none; border: 0; background: none; color: var(--faint); cursor: pointer; font-size: 18px; line-height: 1; border-radius: 6px; padding: 4px; opacity: .25; transition: opacity .15s; }
+.ha-r:hover .x, .ha-r .x:focus-visible { opacity: 1; }
+.ha-r .x:hover { color: var(--blood); background: rgba(255,71,98,.1); }
+.ha-r .x.arm { opacity: 1; color: #fff; background: var(--blood); font-size: 11px; font-weight: 700; white-space: nowrap; }
+.ha-r:has(.x.arm) { grid-template-columns: minmax(0, 1fr) 84px 64px 64px; }
+.ha-list.final .ha-r { grid-template-columns: minmax(0, 1fr) 62px 104px 26px; }
+.ha-list.final .ha-r:has(.x.arm) { grid-template-columns: minmax(0, 1fr) 62px 104px 64px; }
+@media (max-width: 560px) {   /* a phone: the progress moves under the name, so the name gets the room */
+  .ha-r { grid-template-columns: minmax(0, 1fr) 64px 26px; }
+  .ha-r:has(.x.arm) { grid-template-columns: minmax(0, 1fr) 64px 64px; }
+  .ha-list.final .ha-r { grid-template-columns: minmax(0, 1fr) 104px 26px; }
+  .ha-list.final .ha-r:has(.x.arm) { grid-template-columns: minmax(0, 1fr) 104px 64px; }
+  .ha-r .ha-p { display: none; }
+  .ha-pm { display: inline; font-size: 11.5px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .ha-pm.done { color: var(--slime); font-weight: 700; }
+  .ha-pm + .ha-t:not(:empty)::before { content: '·'; margin: 0 5px; color: var(--faint); }
+}
+.ha-r.joined .n3 { color: var(--ink-2); }
+.ha-share.closed #hainv, .ha-share.closed #hainv2, .ha-share.closed #haprev { display: none; }
+.ha-share.closed #halab { color: var(--slime); }
+
+/* the big screen: a play-anytime game's invite */
+.s-ainvite .ai-sub { margin-top: 12px; font-size: 30px; font-weight: 600; color: var(--ink-2); }
+.s-ainvite .joincard .codelab { margin-top: 22px; font-size: 20px; }
+.s-ainvite .pb.done { border-color: rgba(142,240,90,.45); background: rgba(142,240,90,.08); }
+/* (QA pass) */
+@media (max-width: 560px) { .h-hero .btns .btn { flex: 1 1 100%; } }
+.a-board .hd { flex-wrap: wrap; row-gap: 4px; }
+.a-shut { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0; padding: 10px 12px; border-radius: 12px; background: rgba(255,210,63,.1); border: 1px solid rgba(255,210,63,.45); color: #fff2c4; font-size: 14px; font-weight: 600; line-height: 1.35; text-align: center; }
+.a-shut svg { width: 16px; height: 16px; flex: none; color: var(--candy); }
 </style>
 </head>
 <body>
@@ -1938,6 +2106,8 @@ const ICON = {
    - Demo mode: localStorage, synced between tabs of the same browser (for rehearsing)
    Both deliver plain JSON values shaped the way Firebase shapes them. */
 const FIREBASE_SDK = '12.19.0';
+// Every clock on this page (GAME.debugClockOffset shifts it, for testing a close time without waiting).
+const clockNow = () => Date.now() + (+GAME.debugClockOffset || 0);
 const ROOT = GAME.dbRoot;
 const roomPath = code => `${ROOT}/rooms/${code}`;
 
@@ -2012,7 +2182,7 @@ function createDemoStore() {
   function flatten(path, v, out) {
     if (v === null || v === undefined) return;
     if (typeof v === 'object') {
-      if (v['.sv'] === 'timestamp') { out[path] = Date.now(); return; }
+      if (v['.sv'] === 'timestamp') { out[path] = clockNow(); return; }
       for (const k of Object.keys(v)) flatten(path + '/' + k, v[k], out);
       return;
     }
@@ -2061,7 +2231,7 @@ function createDemoStore() {
     onDisconnectRemove(path) { leaveOps.push({ path, value: null }); },
     cancelDisconnect(path) { const p = norm(path); for (let i = leaveOps.length - 1; i >= 0; i--) if (norm(leaveOps[i].path) === p) leaveOps.splice(i, 1); },
     onConnected(cb) { setTimeout(() => cb(true), 0); },
-    serverNow: () => Date.now()
+    serverNow: clockNow
   };
 }
 
@@ -2087,7 +2257,71 @@ function createFireStore() {
     onDisconnectRemove(path) { db.ref(path).onDisconnect().remove().catch(showDbError); },
     cancelDisconnect(path) { db.ref(path).onDisconnect().cancel().catch(() => {}); },
     onConnected(cb) { db.ref('.info/connected').on('value', s => cb(!!s.val())); },
-    serverNow: () => Date.now() + offset
+    serverNow: () => clockNow() + offset
+  };
+}
+
+/* REST: the play-anytime player page talks to the Realtime Database over plain HTTPS requests and holds no
+   connection, so a company-wide link can't run into the free plan's 100 simultaneous connections. Same interface as
+   the other two; on() polls (every GAME.asyncPollSeconds, at once when the tab comes back, paused while it's hidden)
+   instead of listening. Writes that fail come back false, so the caller can keep them and try again. */
+function restBase() { return String(GAME.restUrl || (FIREBASE_CONFIG && FIREBASE_CONFIG.databaseURL) || '').replace(/[?#].*$/, '').replace(/\/+$/, ''); }
+function createRestStore() {
+  const base = restBase(), ns = (String((FIREBASE_CONFIG && FIREBASE_CONFIG.databaseURL) || '').match(/[?&]ns=([^&#]+)/) || [])[1] || '';
+  const norm = p => String(p).split('/').filter(Boolean).map(encodeURIComponent).join('/');
+  const url = (p, silent, extra) => { const q = [ns ? 'ns=' + ns : '', silent ? 'print=silent' : '', extra || ''].filter(Boolean).join('&'); return base + '/' + norm(p) + '.json' + (q ? '?' + q : ''); };
+  let online = true; const conn = [];
+  const setOnline = v => { if (v === online) return; online = v; conn.forEach(cb => { try { cb(v); } catch (e) { /* ignore */ } }); };
+  const stats = { reqs: 0, bytesIn: 0, bytesOut: 0, readAt: 0 };   // what this page has sent and received (the traffic check reads it); when a read last worked
+  async function req(method, path, body, silent, extra) {
+    const ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+    const t = setTimeout(() => { if (ctrl) ctrl.abort(); }, 15000);
+    try {
+      const b = body === undefined ? undefined : JSON.stringify(body);
+      stats.reqs++; if (b) stats.bytesOut += b.length;
+      const r = await fetch(url(path, silent, extra), { method, body: b, cache: 'no-store', signal: ctrl ? ctrl.signal : undefined });
+      const txt = await r.text(); stats.bytesIn += txt.length;
+      if (r.ok && method === 'GET') stats.readAt = Date.now();
+      setOnline(true);
+      if (!r.ok) { const e = new Error('HTTP ' + r.status + ' ' + txt.slice(0, 120)); e.code = r.status === 401 || r.status === 403 ? 'PERMISSION_DENIED' : 'HTTP_' + r.status; throw e; }
+      return txt ? JSON.parse(txt) : null;
+    } catch (e) {
+      if (!e.code) { setOnline(false); if (e.name === 'AbortError') e.timeout = true; }
+      throw e;
+    } finally { clearTimeout(t); }
+  }
+  const ok = p => p.then(() => true, e => { if (e && e.code === 'PERMISSION_DENIED') showDbError(e); else console.warn('[database]', e); return false; });
+  return {
+    mode: 'rest',
+    stats,
+    TS: { '.sv': 'timestamp' },
+    on(path, cb, opts = {}) {
+      let live = true, last, timer = 0, busy = false;
+      const every = Math.max(5, opts.every || GAME.asyncPollSeconds || 30) * 1000;
+      const pull = async () => {
+        if (!live || busy) return; busy = true;
+        try { const v = await req('GET', path); const j = JSON.stringify(v); if (live && j !== last) { last = j; try { cb(v); } catch (e) { console.error(e); } } }
+        catch (e) { console.warn('[database] poll', e); }
+        finally { busy = false; }
+      };
+      const loop = () => { clearTimeout(timer); timer = setTimeout(async () => { if (!document.hidden) await pull(); if (live) loop(); }, every); };
+      const wake = () => { if (!document.hidden && live) { pull(); loop(); } };
+      document.addEventListener('visibilitychange', wake); addEventListener('online', wake);
+      pull(); loop();
+      const off = () => { live = false; clearTimeout(timer); document.removeEventListener('visibilitychange', wake); removeEventListener('online', wake); };
+      off.now = pull;   // ask again right away
+      return off;
+    },
+    set: (path, v) => ok(req('PUT', path, v, true)),
+    update: (path, obj) => ok(req('PATCH', path, obj, true)),
+    remove: path => ok(req('DELETE', path, undefined, true)),
+    get: path => req('GET', path),
+    // a REST query (orderBy="$key" needs no index rules), e.g. a sample of a big list
+    query: (path, q) => req('GET', path, undefined, false, q),
+    onDisconnectRemove() { /* nothing is held open, so there's nothing to clean up */ },
+    cancelDisconnect() { /* as above */ },
+    onConnected(cb) { conn.push(cb); setTimeout(() => cb(online), 0); },
+    serverNow: clockNow
   };
 }
 
@@ -2244,7 +2478,16 @@ const QR = (() => {
     }
     return `<svg viewBox="0 0 ${n} ${n}" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" role="img" aria-label="QR code that opens the join page"><rect width="${n}" height="${n}" fill="${light}"/><path d="${d}" fill="${dark}"/></svg>`;
   }
-  return { make, svg };
+  // The same code as a PNG (a data URL), black on white with a four-module quiet zone: the file for a Teams post,
+  // an email or a printout (the night palette's dark background scans worse).
+  function png(text, px = 1024, quiet = 4) {
+    const { size, M } = make(text), n = size + quiet * 2, cell = Math.max(2, Math.floor(px / n)), w = cell * n;
+    const cv = document.createElement('canvas'); cv.width = cv.height = w;
+    const c = cv.getContext('2d'); c.fillStyle = '#ffffff'; c.fillRect(0, 0, w, w); c.fillStyle = '#000000';
+    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) if (M[y][x]) c.fillRect((x + quiet) * cell, (y + quiet) * cell, cell, cell);
+    return cv.toDataURL('image/png');
+  }
+  return { make, svg, png };
 })();
 /* ============================== ITEM ART ==============================
    Original illustrations, one per item, used when no photo loads. 400x400. */
@@ -2855,8 +3098,27 @@ function encoreItems(room) {
   }
   return encMemo.items;
 }
-// enc = true picks the encore's items, guesses and results; false (or left out) the live game's.
-const itemsOf = (room, enc) => enc ? encoreItems(room) : ITEMS;
+/* ---------- play-anytime (async) rooms ----------
+   A room started with "New play-anytime game" keeps its own snapshot of the items (async/list: the live 10 in order,
+   then the encore pool's order) and of their prices (async/prices), so a live-game price edit never re-scores it and
+   an edit here never touches the live game. Only the last item doubles. */
+const ITEM_BY_ID = {};
+ITEMS.concat(ENCORE_ITEMS).forEach(it => { ITEM_BY_ID[it.id] = it; });
+const isAsync = room => !!(room && room.meta && room.meta.mode === 'async');
+let asyncMemo = { key: null, items: [] };
+function asyncItems(room) {
+  const ids = ents(room && room.async && room.async.list).map(([, id]) => +id).filter(id => ITEM_BY_ID[id]);
+  const key = ids.join(',');
+  if (key !== asyncMemo.key) {
+    const last = ids.length - 1;
+    asyncMemo = { key, items: ids.map((id, k) => Object.assign({}, ITEM_BY_ID[id], { double: k === last })) };
+  }
+  return asyncMemo.items;
+}
+// The one bank there is today: the live 10, then the encore's 10 in the pool's order.
+const asyncBankIds = pool => ITEMS.map(it => it.id).concat(poolOrder(pool));
+// enc = true picks the encore's items, guesses and results; false (or left out) the live game's (or a play-anytime room's).
+const itemsOf = (room, enc) => enc ? encoreItems(room) : isAsync(room) ? asyncItems(room) : ITEMS;
 const resultsOf = (room, enc) => (enc ? room && room.encore && room.encore.results : room && room.results) || {};
 // Encore players: everyone still here, plus anyone who has guessed in the encore and since left
 // (they keep their place on the encore board). Someone who left before it began isn't on it.
@@ -3175,6 +3437,173 @@ function makeController(code) {
   return ctl;
 }
 
+/* ============================== ASYNC MODE ==============================
+   Play-anytime: the host starts a game from the console and shares one link; each person plays all of its items alone,
+   on their own phone, whenever they like, each item on its own guess clock. When the host closes the game the console
+   tallies the board from the raw guesses (the closest-guess bonuses only exist then), and every player page shows the
+   results the next time it looks. Shared here: the room's settings and prices, time zones, the texts for the chat, the
+   result card, and the scoring helpers. */
+
+// A room code can be used for a new game when nothing's there, or when a live game's room is more than 12 hours old.
+// A play-anytime game runs for days: its code stays taken while it's open, and for 60 days after it closes.
+function codeFree(m) {
+  if (!m) return true;
+  const now = store.serverNow();
+  if (m.mode === 'async') return m.status === 'closed' && now - (m.closedAt || m.created || now) > 60 * 864e5;
+  return typeof m.created === 'number' && now - m.created > 12 * 3600e3;
+}
+function asyncSettingsOf(room) {
+  const s = (room && room.async && room.async.settings) || {};
+  return {
+    secs: typeof s.secs === 'number' && s.secs >= 0 ? s.secs : GAME.asyncClockSeconds,
+    bonus: s.bonus !== false,
+    lightning: s.lightning != null ? !!s.lightning : GAME.lightning !== false,
+    hand: s.hand != null ? !!s.hand : GAME.skeletonHand
+  };
+}
+// This room's own prices, resolved when it was created (and edited on its console since): { id: { price, reveal, fine } }.
+const asyncPricesOf = room => (room && room.async && room.async.prices) || {};
+function asyncPriceSnapshot(ids, overrides) {
+  const out = {};
+  ids.forEach(id => { const v = viewOf(ITEM_BY_ID[id], overrides); out[id] = { price: v.price, reveal: v.reveal, fine: v.fine || '' }; });
+  return out;
+}
+
+/* ---------- time zones ----------
+   The host types a close time in GAME.timeZone (Eastern); it's stored as epoch ms, and each player sees it in their own. */
+function tzOffset(ms, tz) {   // the zone's local clock minus UTC, in ms, at that moment
+  try {
+    const p = new Intl.DateTimeFormat('en-US', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }).formatToParts(new Date(ms));
+    const g = t => +(p.find(x => x.type === t) || { value: 0 }).value;
+    return Date.UTC(g('year'), g('month') - 1, g('day'), g('hour') % 24, g('minute'), g('second')) - Math.floor(ms / 1000) * 1000;
+  } catch (e) { return -new Date(ms).getTimezoneOffset() * 60000; }
+}
+// "2026-10-23T15:00" (a datetime-local value) in that zone → epoch ms
+function zonedToEpoch(str, tz = GAME.timeZone) {
+  const m = String(str || '').match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/); if (!m) return NaN;
+  const wall = Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]);
+  let t = wall; for (let k = 0; k < 3; k++) t = wall - tzOffset(t, tz);
+  return t;
+}
+function epochToZoned(ms, tz = GAME.timeZone) {   // → "2026-10-23T15:00"
+  const d = new Date(ms + tzOffset(ms, tz)), p = n => String(n).padStart(2, '0');
+  return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())}T${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`;
+}
+// "Tue 10:14 AM", "Fri, Oct 23 at 3:00 PM": in tz when given (the host's texts), otherwise in this device's own zone
+function fmtClock(ms, tz) {
+  const o = { hour: 'numeric', minute: '2-digit' }; if (tz) o.timeZone = tz;
+  return new Date(ms).toLocaleTimeString('en-US', o).replace(/[\u202f\u00a0]/g, ' ').replace(/:00(?= )/, '');   // (newer browsers put a narrow space before PM)
+}
+function fmtWhen(ms, tz) {
+  const o = { weekday: 'short', month: 'short', day: 'numeric' }; if (tz) o.timeZone = tz;
+  return new Date(ms).toLocaleDateString('en-US', o) + ' at ' + fmtClock(ms, tz);
+}
+// "today at 3 PM", "tomorrow at 9:30 AM", "Friday at 3 PM" (within a week), "Oct 30 at 3 PM"
+function fmtDrop(ms, tz) {
+  const now = clockNow(), dayOf = t => { const d = new Date(t + (tz ? tzOffset(t, tz) : -new Date(t).getTimezoneOffset() * 60000)); return Math.floor(d.getTime() / 864e5); };
+  const diff = dayOf(ms) - dayOf(now), o = tz ? { timeZone: tz } : {};
+  const day = diff === 0 ? 'today' : diff === 1 ? 'tomorrow' : diff > 1 && diff < 7 ? new Date(ms).toLocaleDateString('en-US', Object.assign({ weekday: 'long' }, o))
+    : new Date(ms).toLocaleDateString('en-US', Object.assign({ month: 'short', day: 'numeric' }, o));
+  return day + ' at ' + fmtClock(ms, tz);
+}
+function agoText(ms) {
+  const s = Math.max(0, Math.round((clockNow() - ms) / 1000));
+  if (s < 50) return 'just now';
+  if (s < 3600) return Math.round(s / 60) + ' min ago';
+  if (s < 86400) return Math.round(s / 3600) + ' hr ago';
+  return Math.round(s / 86400) + (s < 172800 ? ' day ago' : ' days ago');
+}
+
+/* ---------- the texts for the chat ---------- */
+// The result card: Wordle-style, spoiler-free (no prices, no item names), two rows of ten tiles in play order.
+// 🟩 800–1,000 closeness points (within about 1.6× of the price), 🟨 400–799 (within 4×), 🟧 1–399, ⬛ 0 or no guess, 🎯 a bullseye.
+function tileOf(g, price) {
+  if (!(g > 0) || !(price > 0)) return '⬛';
+  if (Math.abs(g - price) < 0.005) return '🎯';
+  const c = closeness(g, price);
+  return c >= 800 ? '🟩' : c >= 400 ? '🟨' : c >= 1 ? '🟧' : '⬛';
+}
+function shareCardText({ name, total, place, of, tiles, url, closed, shut, fun }) {
+  const rows = []; for (let k = 0; k < tiles.length; k += 10) rows.push(tiles.slice(k, k + 10).join(''));
+  const who = name ? name + ' · ' : '';
+  const line = fun ? `${who}${fmtPts(total)} pts · played just for fun`
+    : closed && place ? `${who}${ordinal(place)} of ${of} · ${fmtPts(total)} pts`
+    : shut ? `${who}${fmtPts(total)} pts · results coming soon`
+    : `${who}${fmtPts(total)} pts · waiting on the rest of you`;
+  return ['🎃 The Price Is Fright', line].concat(rows, [(closed || (shut && !fun) ? 'See the results: ' : 'Play it: ') + url]).join('\n');
+}
+// The host's invite, in two lengths (Teams or Slack; a text group).
+function inviteText(code, meta, n, short) {
+  const url = shareJoinUrl(code), when = meta && meta.closeAt ? fmtDrop(meta.closeAt, GAME.timeZone) + ' ET' : '';
+  return short
+    ? `🎃 Price Is Fright time. ${n} items, guess the price, ten minutes, play whenever: ${url}${when ? ` Results ${when}.` : ''}`
+    : `🎃 The Price Is Fright is open! ${n} Halloween items, guess the price, play whenever you've got ten minutes. Scan the code or tap: ${url}${when ? ` — results drop ${when}.` : ''}`;
+}
+function reminderText(code, meta, left) {
+  const url = shareJoinUrl(code), when = meta && meta.closeAt ? fmtDrop(meta.closeAt, GAME.timeZone) + ' ET' : '';
+  const who = left > 0 ? `${left} of you haven't finished The Price Is Fright.` : "Still time to play The Price Is Fright.";
+  return `🎃 ${who} ${when ? `Results drop ${when}!` : 'Results drop when the game closes, so get your guesses in!'} ${url}`;
+}
+function announceText(code, board) {
+  const medal = ['🥇', '🥈', '🥉'], top = (board || []).filter(e => e.rank <= 3).slice(0, 5);
+  const list = top.map(e => `${medal[e.rank - 1]} ${e.name} ${fmtPts(e.total)}`).join(' · ');
+  return `🎃 The results are in!${list ? ' ' + list + '.' : ''} See where you landed: ${shareJoinUrl(code)}`;
+}
+
+/* ---------- scoring ---------- */
+// One item's result on a player's own phone, in computeResult's shape: closeness points now (the closest-guess bonus
+// waits for the close), plus the guesses others have made on it so far (`others`, for the crowd marker).
+function asyncResult(it, view, me, name, g, others) {
+  const price = view.price, mult = it.double ? 2 : 1;
+  const res = { price, reveal: view.reveal, fine: view.fine, mult, n: (g > 0 ? 1 : 0) + others.length, scores: {}, closest: {}, highest: {}, bull: {}, beyond: {}, others, async: true };
+  if (g > 0) {
+    res.scores[me] = { n: name, g, p: closeness(g, price) * mult, b: 0 };
+    if (Math.abs(g - price) < 0.005) res.bull[me] = true;
+    if (it.beyond && g > it.beyond.value) res.beyond[me] = true;
+  }
+  return res;
+}
+// The middle guess (on a ratio scale), as the live phones show the crowd's guess.
+function medianGuess(vals) {
+  const logs = vals.filter(v => v > 0).map(v => Math.log(v)).sort((a, b) => a - b), n = logs.length;
+  return n ? Math.exp(n % 2 ? logs[(n - 1) / 2] : (logs[n / 2 - 1] + logs[n / 2]) / 2) : null;
+}
+// Who's on a play-anytime board: everyone who opened at least one item, or has a guess in.
+function asyncPlayed(room) {
+  const out = new Set();
+  namedPlayers(room).forEach(([pid, p]) => { if (p.shownAt || typeof p.i === 'number' || p.done) out.add(pid); });
+  ents(room && room.guesses).forEach(([, g]) => ents(g).forEach(([pid]) => { if (room.players && room.players[pid]) out.add(pid); }));
+  return out;
+}
+// The close: score every item from the raw guesses (computeResult, closest bonus with ties, the last item doubled),
+// rank everyone (ties share a place), and write it all down for the player pages.
+function asyncTally(room) {
+  const items = asyncItems(room), set = asyncSettingsOf(room), prices = asyncPricesOf(room), results = {};
+  items.forEach((it, i) => {
+    const r = computeResult(i, room, prices, false);
+    if (!set.bonus) { r.closest = {}; Object.values(r.scores).forEach(s => { s.b = 0; }); }
+    results[i] = r;
+  });
+  const played = asyncPlayed(room);
+  const list = standings(Object.assign({}, room, { results }), items.length - 1).filter(e => played.has(e.pid));
+  let rk = 0, lastV = null;
+  list.forEach((e, k) => { if (e.total !== lastV) { rk = k + 1; lastV = e.total; } e.rank = rk; });
+  const players = {};
+  list.forEach(e => {
+    const closest = []; let bonus = 0;
+    items.forEach((_, i) => { const s = results[i].scores[e.pid]; if (s && s.b) { closest.push(i); bonus += s.b; } });
+    players[e.pid] = { rank: e.rank, total: e.total, bonus, closest };
+  });
+  const votes = POLL.options.map(() => ({ n: 0, names: [] }));
+  list.forEach(e => { const p = room.players[e.pid]; if (p && typeof p.poll === 'number' && votes[p.poll]) { votes[p.poll].n++; if (votes[p.poll].names.length < 6) votes[p.poll].names.push(p.name); } });
+  const final = {
+    info: { at: store.TS, count: list.length, items: items.length, bonus: set.bonus },
+    board: list.slice(0, 10).map(e => ({ pid: e.pid, name: e.name, total: e.total, rank: e.rank })),
+    poll: votes, players
+  };
+  return { results, final, list };
+}
+
 /* ============================== ITEM PICTURES ==============================
    Each item's picture, best first: the photo built into this file (ITEM_PHOTOS, at the very bottom),
    a file in an img/ folder next to the page (photo), the remote listing photo (photoUrl), and
@@ -3461,13 +3890,16 @@ function PriceRow(nD) {
    Phones and laptops. Most people watch the game here, so the phone mirrors the big screen, timed off the same
    clock: the store listing and fact pop-up while people guess, the drum reveal of the price (then your guess
    against it), the leaderboard, the podium and the poll. Each screen is built once, then updated in place. */
-function PlayerApp(code0) {
+function PlayerApp(code0, asyncMeta) {
   document.body.classList.add('role-player');
+  // A play-anytime room (asyncMeta = its meta): the same screens, each player on their own clock (see ASYNC below).
+  const ASYNC = !!asyncMeta;
+  if (ASYNC) document.body.classList.add('async-play');
   const app = $('#app');
   const clean = s => String(s || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4);
   // Demo mode keeps one identity per tab (so you can rehearse with several tabs);
   // the real game also remembers it across tab closes on the same phone.
-  const persistId = store.mode === 'firebase';
+  const persistId = store.mode === 'firebase' || store.mode === 'rest';
   const idKey = c => 'tpif:pid:' + c;
   const loadId = c => KV.get(idKey(c), true) || (persistId ? KV.get(idKey(c)) : null);
   const saveId = (c, id) => { KV.set(idKey(c), id, true); if (persistId) KV.set(idKey(c), id); };
@@ -3476,6 +3908,7 @@ function PlayerApp(code0) {
   let code = clean(code0), pid = null, room = null, unsub = null, seenMe = false, active = false;
   let screen = '', cur = null, ticker = 0, batTimer = 0;
   const drafts = {};
+  let A = null;   // a play-anytime game (see ASYNC at the end of PlayerApp)
   const timers = [];
   const later = (ms, fn) => timers.push(setTimeout(fn, Math.max(0, ms)));
   const clearLater = () => { while (timers.length) clearTimeout(timers.pop()); };
@@ -3487,11 +3920,12 @@ function PlayerApp(code0) {
   };
 
   store.onConnected(c => {
-    if (!c || !active || !pid) return;
+    if (ASYNC || !c || !active || !pid) return;
     const p = roomPath(code) + '/presence/' + pid;
     store.onDisconnectRemove(p); store.set(p, true);
   });
-  if (code && loadId(code)) resume(); else showJoin();
+  if (ASYNC) setTimeout(() => asyncBoot(asyncMeta), 0);   // (after the screens below are defined)
+  else if (code && loadId(code)) resume(); else showJoin();
 
   function cleanup() {
     active = false; if (unsub) { unsub(); unsub = null; }
@@ -3539,6 +3973,7 @@ function PlayerApp(code0) {
       const base = roomPath(c);
       const meta = await getWithin(base + '/meta');
       if (!meta) return fail(`We can't find room ${c}. Check the code on the big screen.`);
+      if (meta.mode === 'async') { KV.set('tpif:name', name); location.href = joinUrl(c); return; }   // a play-anytime game
       const [players, pres] = await Promise.all([getWithin(base + '/players'), getWithin(base + '/presence')]);
       let id = null;
       for (const [k, p] of ents(players)) {
@@ -3572,8 +4007,8 @@ function PlayerApp(code0) {
     const was = code;
     if (pid) store.cancelDisconnect(roomPath(code) + '/presence/' + pid);
     cleanup(); dropId(was); pid = null;
-    app.innerHTML = `<div class="p-wrap"><div class="panel p-card p-center" style="margin-top:12vh"><div class="p-spin">${ICON.ghost}</div><h2 class="p-h">${esc(msg.title)}</h2><p class="p-p">${esc(msg.text)}</p><button class="btn block" id="rj" style="margin-top:18px">Join a game</button></div></div>`;
-    $('#rj').onclick = () => showJoin();
+    app.innerHTML = `<div class="p-wrap"><div class="panel p-card p-center" style="margin-top:12vh"><div class="p-spin">${ICON.ghost}</div><h2 class="p-h">${esc(msg.title)}</h2><p class="p-p">${esc(msg.text)}</p><button class="btn block" id="rj" style="margin-top:18px">${ASYNC ? 'Back to the game page' : 'Join a game'}</button></div></div>`;
+    $('#rj').onclick = () => { if (ASYNC) location.replace(joinUrl(was)); else showJoin(); };
   }
 
   // A bat across the screen now and then, like the big screen's.
@@ -3607,6 +4042,8 @@ function PlayerApp(code0) {
 
   function render() {
     if (!active) return;
+    if (ASYNC) return renderAsync();
+    if (isAsync(room)) { const m = room.meta; cleanup(); PlayerApp(code, m); return; }   // a play-anytime game (reached without its own page)
     if (!room || !room.meta) { if (seenMe) kicked({ title: 'This game has ended', text: `Room ${code} isn't running anymore.` }); else { cleanup(); dropId(code); showJoin(`We can't find room ${code}.`); } return; }
     const me = room.players && room.players[pid];
     if (!me || !me.name) { if (seenMe) kicked({ title: "You've left the game", text: 'The host removed you from this room. If that was a mistake, you can join again.' }); return; }
@@ -3640,7 +4077,9 @@ function PlayerApp(code0) {
     const pme = $('#pme'); if (!pme || !room) return;
     const me = room.players && room.players[pid]; if (!me) return;
     const st = stateOf(room), enc = st.encore && st.phase !== 'end';
-    const list = shownTotals(st, enc), mine = list.find(e => e.pid === pid), tot = mine ? mine.total : 0;
+    const list = shownTotals(st, enc), mine = list.find(e => e.pid === pid);
+    const tot = ASYNC && A && A.headTotal != null ? A.headTotal   // (a closed play-anytime game: the final total, bonuses in)
+      : (mine ? mine.total : 0) + (ASYNC && A && A.fun && A.fun.on ? A.fun.plus || 0 : 0);
     const sig = me.name + '|' + enc + '|' + tot;
     if (pme.dataset.sig === sig) return;
     const was = pme.dataset.enc === String(enc) && pme.dataset.tot ? +pme.dataset.tot : null;
@@ -3650,17 +4089,19 @@ function PlayerApp(code0) {
   }
 
   /* ---------- the poll (asked in the lobby, revealed after the final scores) ---------- */
-  function pollCard(me, title = 'While you wait') {
+  function pollCard(me, title = 'While you wait', note = 'Results come after the final scores.') {
     const sel = typeof me.poll === 'number' ? me.poll : -1;
     return `<div class="panel p-card" id="pollc"><h3 class="p-h" style="font-size:24px">${esc(title)}</h3><p class="p-p">${esc(POLL.question)}</p>
       <div class="opts">${POLL.options.map((o, k) => `<button type="button" class="opt${k === sel ? ' on' : ''}" data-opt="${k}" aria-pressed="${k === sel}"><span class="tick">${ICON.check}</span>${esc(o)}</button>`).join('')}</div>
-      <p class="p-small" style="margin:12px 0 0">You can change your answer. Results come after the final scores.</p></div>`;
+      <p class="p-small" style="margin:12px 0 0">You can change your answer. ${esc(note)}</p></div>`;
   }
   function wirePoll(root) {
     $$('[data-opt]', root).forEach(b => b.addEventListener('click', () => {
       const k = +b.dataset.opt;
       $$('[data-opt]', root).forEach(x => { const on = +x.dataset.opt === k; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); });
-      store.set(roomPath(code) + '/players/' + pid + '/poll', k);
+      if (ASYNC && A && pid && pid !== 'pfun') queueWrite({ [`players/${pid}/poll`]: k });   // (kept and sent again if the network blinks)
+      else store.set(roomPath(code) + '/players/' + pid + '/poll', k);
+      if (ASYNC && room && room.players && room.players[pid]) room.players[pid].poll = k;   // (no room subscription to bring it back)
     }));
   }
   function syncPoll(root, me) {
@@ -3715,7 +4156,7 @@ function PlayerApp(code0) {
       const dk = (enc ? 'e' : '') + i;   // draft key (encore drafts don't collide with the live game's)
       const R = resultsOf(room, enc);
       const dots = items.map((x, k) => `<i class="${k === i ? 'now' : k < i || R[k] ? 'done' : ''}${x.double ? ' dbl' : ''}"></i>`).join('');
-      const el = mk('p-scene' + (enc ? ' enc' : ''), `
+      const el = mk('p-scene' + (enc ? ' enc' : '') + (N > 12 ? ' many' : ''), `
         <div class="pi-left">
           <div class="pi-top"><span class="kick">${enc ? 'Encore item' : 'Item'} ${i + 1} of ${N}</span><span class="pi-dots" aria-hidden="true">${dots}</span></div>
           <div class="pi-photo${it.photoFit === 'poster' ? ' tall' : ''}">${it.double ? '<span class="sticker">Double points</span>' : ''}<div class="art">${artHTML(it)}</div></div>
@@ -3838,9 +4279,11 @@ function PlayerApp(code0) {
           if (!(v > 0) || v > GUESS_MAX) { preview(); gi.focus(); return; }
           if (!here(s) || s.phase !== 'item' || clockInfo(s, store.serverNow()).mode === 'up') return;
           gi.value = plainNum(v); drafts[dk] = null; editing = false;
+          if (ASYNC) { gi.blur(); buzz(25); asyncLock(i, v); return; }   // play-anytime: locked on submit, and the reveal starts
           store.set(roomPath(code) + (enc ? '/encore' : '') + '/guesses/' + i + '/' + pid, { v, t: store.TS });
           gi.blur(); buzz(25);
         });
+        if (ASYNC && !stateOf(room).endsAt) $('.gtime', act).hidden = true;   // play-anytime with no timer: no countdown bar
         preview(); lockHint(); paintTimer(stateOf(room), store.serverNow());
         // on a laptop, the cursor is already in the box when an item appears (phones wait for a tap: no surprise keyboard)
         if (!autoFocused && FINE_POINTER && !m && document.visibilityState === 'visible') { autoFocused = true; try { gi.focus({ preventScroll: true }); } catch (e) { /* ignore */ } }
@@ -3884,6 +4327,7 @@ function PlayerApp(code0) {
 
       /* the shoppers-and-clock line, like the big screen's */
       function paintDeal(s, now) {
+        if (ASYNC) return paintDealAsync(s, now);
         const pl = namedPlayers(room), g = guessesFor(room, i, enc), pres = room.presence || {};
         const can = enc ? new Set(encoreIds(room)) : null;
         const who = pl.filter(([q]) => !can || can.has(q));
@@ -3906,6 +4350,20 @@ function PlayerApp(code0) {
         $('.ic', clk).innerHTML = c.mode === 'up' ? ICON.lock : ICON.clock;
         $('b', clk).textContent = c.mode === 'run' ? Math.floor(c.sec / 60) + ':' + String(c.sec % 60).padStart(2, '0') : '';
         $('.st2', clk).textContent = c.mode === 'run' ? 'left' : c.mode === 'up' ? "Time's up" : 'Guessing is open';
+      }
+
+      // Play-anytime: no shoppers to count, just where you are and your own clock.
+      function paintDealAsync(s, now) {
+        if (cnt.dataset.s !== 'a') { cnt.dataset.s = 'a'; $('b', cnt).textContent = ''; $('.st', cnt).textContent = i < N - 1 ? `${N - 1 - i} more to go` : 'Last one: double points'; $('.bar', cnt).hidden = true; }
+        const c = clockInfo(s, now);
+        el.classList.toggle('hurry', c.mode === 'run' && c.sec <= 10 && !mine());
+        const sig = c.mode + (c.mode === 'run' ? c.sec : '');
+        if (sig === clockSig) return;
+        clockSig = sig;
+        clk.className = 'clk' + (c.mode === 'run' ? (c.sec <= 5 ? ' hot' : c.sec <= 10 ? ' warn' : '') : c.mode === 'up' ? ' up' : '');
+        $('.ic', clk).innerHTML = c.mode === 'up' ? ICON.lock : ICON.clock;
+        $('b', clk).textContent = c.mode === 'run' ? Math.floor(c.sec / 60) + ':' + String(c.sec % 60).padStart(2, '0') : '';
+        $('.st2', clk).textContent = c.mode === 'run' ? 'to guess' : c.mode === 'up' ? "Time's up" : 'No time limit';
       }
 
       /* the reveal: the same drums as the big screen, on the same clock */
@@ -3972,13 +4430,18 @@ function PlayerApp(code0) {
         const xOf = v => (50 + 50 * clamp(Math.log10(v / p), -1, 1)).toFixed(2) + '%';
         const edge = v => { const x = parseFloat(xOf(v)); return x < 8 ? ' at-l' : x > 92 ? ' at-r' : ''; };   // labels near an end lean inward
         const logs = ents(res.scores).map(([, sc]) => sc.g).filter(v => v > 0).map(v => Math.log(v)).sort((a, b) => a - b), nl = logs.length;
-        const avg = nl >= 2 ? Math.exp(nl % 2 ? logs[(nl - 1) / 2] : (logs[nl / 2 - 1] + logs[nl / 2]) / 2) : null;
+        let avg = nl >= 2 ? Math.exp(nl % 2 ? logs[(nl - 1) / 2] : (logs[nl / 2 - 1] + logs[nl / 2]) / 2) : null;
         const off = v => Math.abs(Math.log(v / p));
         const others = ents(res.scores).filter(([q, sc]) => q !== pid && sc.g > 0);
         const beat = g ? others.filter(([, sc]) => off(sc.g) > off(g) + 1e-9).length : 0;
-        const crowd = avg ? `Crowd's guess <b>${esc(fmtShort(avg))}</b>${g && others.length && !(res.closest && res.closest[pid]) && beat ? ` · you beat ${beat} of ${others.length} ${others.length === 1 ? 'other' : 'others'}` : ''}` : '';
+        let crowd = avg ? `Crowd's guess <b>${esc(fmtShort(avg))}</b>${g && others.length && !(res.closest && res.closest[pid]) && beat ? ` · you beat ${beat} of ${others.length} ${others.length === 1 ? 'other' : 'others'}` : ''}` : '';
+        if (ASYNC) {   // play-anytime: the crowd so far (once three others have guessed this item), and how many of them you beat
+          const oG = (res.others || []).filter(v => v > 0), bt = g ? oG.filter(v => off(v) > off(g) + 1e-9).length : 0;
+          avg = oG.length >= 3 ? medianGuess(g ? oG.concat([g]) : oG) : null;
+          crowd = avg ? `Crowd so far <b>${esc(fmtShort(avg))}</b>${g && bt ? (res.sampled ? ` · you beat ${Math.round(bt / oG.length * 100)}% of them` : ` · you beat ${bt} of ${oG.length}`) : ''}` : g && res.fetched && !oG.length && !funOn() ? "You're the first to play this one" : '';
+        }
         const chips = [];
-        if (s && res.bull && res.bull[pid]) chips.push(`<span class="bonus gold">${ICON.star} Bullseye! +${fmtPts(s.b)} bonus</span>`);
+        if (s && res.bull && res.bull[pid]) chips.push(`<span class="bonus gold">${ICON.star} Bullseye!${ASYNC ? ' Right on the money' : ` +${fmtPts(s.b)} bonus`}</span>`);
         else if (s && s.b) chips.push(`<span class="bonus">${ICON.target} Closest guess · +${fmtPts(s.b)} bonus</span>`);
         if (s && res.highest && res.highest[pid] && !(res.closest && res.closest[pid]) && res.n > 1) chips.push(`<span class="bonus gold">${ICON.up} Highest guess of the round</span>`);
         if (s && res.beyond && res.beyond[pid] && it.beyond) chips.push(`<span class="bonus gold">${ICON.rocket} ${esc(it.beyond.label)}</span>`);
@@ -3991,19 +4454,20 @@ function PlayerApp(code0) {
         const namesHTML = names => { const out = names.map(n => n === myName ? `<em>${esc(n)} (you)</em>` : esc(n)); return out.length > 1 ? out.slice(0, -1).join(', ') + ' & ' + out[out.length - 1] : (out[0] || 'Nobody'); };
         after.innerHTML = `<div class="panel pi-res">
             <div class="vs"><div class="t me"><span class="k">Your guess</span>${g ? tileMoney(g, p) : '<span class="v none">No guess</span>'}</div><span class="x">vs</span><div class="t act"><span class="k">Actual price</span>${tileMoney(p, g)}</div></div>
-            ${res.n ? `<div class="meter" aria-hidden="true"><div class="trk"></div><span class="mid"></span>${g ? `<span class="mpin${edge(g)}" data-x="${xOf(g)}"><b>You</b><i></i><u></u></span>` : ''}${avg ? `<span class="mavg${edge(avg)}" data-x="${xOf(avg)}"><i></i><b>Crowd</b></span>` : ''}<div class="ends"><span>Too low</span><span>The price</span><span>Too high</span></div></div>` : ''}
+            ${(ASYNC ? g || avg : res.n) ? `<div class="meter" aria-hidden="true"><div class="trk"></div><span class="mid"></span>${g ? `<span class="mpin${edge(g)}" data-x="${xOf(g)}"><b>You</b><i></i><u></u></span>` : ''}${avg ? `<span class="mavg${edge(avg)}" data-x="${xOf(avg)}"><i></i><b>Crowd</b></span>` : ''}<div class="ends"><span>Too low</span><span>The price</span><span>Too high</span></div></div>` : ''}
             <div class="pi-verdict">${verdictHTML(g, p)}</div>
             ${crowd ? `<div class="pi-crowd">${crowd}</div>` : ''}
             <div class="pi-gain${gain ? '' : ' zero'}">+<span class="gv">${fmtPts(instant ? gain : 0)}</span><small> pts</small></div>
             ${chips.length ? `<div class="chips2">${chips.join('')}</div>` : ''}
             ${res.mult > 1 ? `<div class="dbl2">Double points on the ${enc ? 'encore ' : ''}finale</div>` : ''}
-            <div class="tot2"><b>${fmtPts(meRow ? meRow.total : 0)}</b> ${enc ? 'encore ' : ''}total · <b>${meRow ? ordinal(meRow.rank) : '—'}</b> of ${list.length}</div>
+            ${ASYNC ? asyncTotHTML(res, i, N) : `<div class="tot2"><b>${fmtPts(meRow ? meRow.total : 0)}</b> ${enc ? 'encore ' : ''}total · <b>${meRow ? ordinal(meRow.rank) : '—'}</b> of ${list.length}</div>`}
           </div>
           ${res.reveal ? `<div class="pi-note"><span class="ic">${ICON.pumpkin}</span><div><p>${esc(res.reveal)}</p>${res.fine ? `<div class="src">Source: ${esc(res.fine)}</div>` : ''}</div></div>` : ''}
-          <div class="panel pi-calls"><h4>Top guesses</h4>${ordered.map(c => {
+          ${ASYNC ? asyncNextHTML(i, N) : `<div class="panel pi-calls"><h4>Top guesses</h4>${ordered.map(c => {
             const ic = { close: ICON.target, high: ICON.up, bull: ICON.star, beyond: ICON.rocket }[c.kind];
             return `<div class="pc c-${c.kind}"><div class="ic">${ic}</div><div><div class="k">${esc(c.label)}</div><div class="who2">${c.names.length ? namesHTML(c.names) : 'Nobody'}</div><div class="d">${esc(c.detail)}</div></div></div>`;
-          }).join('')}</div>`;
+          }).join('')}</div>`}`;
+        if (ASYNC) wireAsyncNext(after);
         const pins = $$('.meter .mpin, .meter .mavg', after);
         if (instant) {
           $$('.pi-after > *, .pi-res .bonus, .pi-gain', el).forEach(n => { n.style.animation = 'none'; });
@@ -4142,15 +4606,16 @@ function PlayerApp(code0) {
   // The podium for the final results and the encore champion, on the big screen's clock (podiumPlan): the rest of
   // the board counts down, third and second rise, the lights go down for "And the champion is…", then lightning
   // and the champion. Your own place shows as it's revealed.
-  function podiumScreen(st, me, list, title, sub, enc) {
-    const P = podiumPlan(list.length), e = list.find(x => x.pid === pid), rest = list.slice(3, 10);
+  // opts (play-anytime): me = your own entry when you're not in `list` (the top ten), of = how many played.
+  function podiumScreen(st, me, list, title, sub, enc, opts = {}) {
+    const P = podiumPlan(list.length), e = list.find(x => x.pid === pid) || opts.me || null, rest = list.slice(3, 10), of = opts.of || list.length;
     const stone = (x, cls) => `<div class="pfs ${cls}${x ? '' : ' empty'}${x && x.pid === pid ? ' me' : ''}">${cls === 'p1' ? `<div class="crown">${ICON.crown}</div>` : ''}<div class="who">${x ? esc(x.name) : ''}</div>
       <div class="st"><span class="rip">R.I.P.</span><span class="pl">${x ? x.rank : ''}</span><span class="pt">${x ? fmtPts(x.total) : ''}</span></div></div>`;
     let you = '';
     if (e) {
       const tied = list.filter(x => x.rank === e.rank).length > 1;
       if (e.rank === 1) you = `<div class="lab2">${enc ? 'The encore' : 'The night'} belongs to…</div><div class="big">${tied ? 'Tied for the win!' : 'You won!'}</div><p class="p-p"><b>${fmtPts(e.total)}</b> points</p>`;
-      else you = `<div class="lab2">You finished</div><div class="p-rank">${e.rank}<small>${ordinal(e.rank).replace(/^\d+/, '')}</small></div><p class="p-p">of ${list.length} · <b>${fmtPts(e.total)}</b> points</p>
+      else you = `<div class="lab2">You finished</div><div class="p-rank">${e.rank}<small>${ordinal(e.rank).replace(/^\d+/, '')}</small></div><p class="p-p">of ${of} · <b>${fmtPts(e.total)}</b> points</p>
         <h2 class="p-h" style="margin-top:10px;font-size:22px">${e.rank <= 3 ? 'On the podium!' : 'Thanks for playing along!'}</h2>`;
     }
     const el = mk('p-fin' + (enc ? ' enc' : ''), `
@@ -4187,6 +4652,678 @@ function PlayerApp(code0) {
         });
       }
     };
+  }
+
+  /* ============================== ASYNC: play-anytime ==============================
+     The same screens as the live game, with the host's clock swapped for the player's own and "Next" in the player's
+     hand. The page keeps a room-shaped object of its own (room) built from this player's progress, so the item page,
+     the reveal, the result card and the podium run unchanged: its state is this player's item and clock, and its
+     guesses and results are only theirs. Progress lives in this browser (so a reload or a closed tab comes straight
+     back to the same place) and in the room (players/{pid}, guesses/{i}/{pid}), so a new device can pick it up too.
+     On a real game none of this holds a database connection (createRestStore): it polls the room's meta for the close. */
+  const abase = () => roomPath(code);
+  const CROWD_SAMPLE = 120;
+  const progKey = () => 'tpif:async:' + code + ':' + pid;
+  const blankProg = () => ({ i: null, shownAt: 0, g: {}, lk: {}, rv: {}, done: false });
+  const prog = () => (A.fun && A.fun.on ? A.fun : A.prog);
+  const funOn = () => !!(A && A.fun && A.fun.on);
+  const viewAt = k => viewOf(A.items[k], A.prices);
+  const isClosed = () => !!(A.meta && A.meta.status === 'closed');
+  const closingNow = () => !isClosed() && !!(A.meta && A.meta.closeAt) && clockNow() >= A.meta.closeAt;
+  function saveProg() {
+    if (!pid || !A) return;
+    try { KV.set(progKey(), JSON.stringify({ prog: A.prog, pend: A.pend, fun: A.fun || null })); } catch (e) { /* ignore */ }
+  }
+  addEventListener('storage', e => {
+    if (!A || !pid || !room || funOn() || !e.key || e.key !== progKey() || !e.newValue) return;
+    let v = null; try { v = JSON.parse(e.newValue); } catch (x) { return; }
+    const inc = v && v.prog, P = A.prog; if (!inc) return;
+    const ii = inc.i == null ? -1 : inc.i, pi = P.i == null ? -1 : P.i;
+    const ahead = (inc.done && !P.done) || ii > pi || (ii === pi && ii >= 0 && ((inc.g && inc.g[ii] > 0 && !(P.g[pi] > 0)) || (inc.rv && inc.rv[ii] && !P.rv[pi])));
+    if (!ahead) return;
+    A.prog = Object.assign(blankProg(), inc); ['g', 'lk', 'rv'].forEach(k => { A.prog[k] = Object.assign({}, inc[k] || {}); });
+    if (v.pend) Object.assign(A.pend, v.pend);
+    asyncRoute();
+  });
+  function readProg() {
+    try { const v = JSON.parse(KV.get(progKey()) || 'null'); return v && typeof v === 'object' ? v : null; } catch (e) { return null; }
+  }
+  // Points so far, on this phone (closeness only: the closest-guess bonuses are added when the game closes).
+  function asyncTotal() {
+    let t = funOn() ? A.fun.plus || 0 : 0;   // (for fun after a partial game: picks up from the board total)
+    for (const [, r] of ents(room && room.results)) { const s = r.scores && r.scores[pid]; if (s) t += s.p || 0; }
+    return t;
+  }
+  function playedCount(P) { let n = 0; for (let k = 0; k < A.n; k++) if (P.g[k] > 0 || P.rv[k]) n++; return n; }
+
+  async function asyncBoot(meta) {
+    active = true; screen = '';
+    A = { meta, crowd: {}, res: {}, pend: {}, prog: blankProg(), fun: null, final: null, mine: null, headTotal: null, board: null, joinedCount: 0, screenN: 0, notify: false };
+    app.innerHTML = `<div class="p-wrap"><div class="panel p-card p-center" style="margin-top:14vh"><div class="p-spin">${ICON.ghost}</div><p class="p-p">Opening the game…</p></div></div>`;
+    try {
+      const b = abase();
+      const [list, prices, set] = await Promise.all([getWithin(b + '/async/list'), getWithin(b + '/async/prices'), getWithin(b + '/async/settings')]);
+      A.list = ents(list).map(([, id]) => +id).filter(id => ITEM_BY_ID[id]);
+      A.prices = prices || {};
+      A.set = asyncSettingsOf({ async: { settings: set } });
+    } catch (e) {
+      console.error(e);
+      app.innerHTML = `<div class="p-wrap"><div class="panel p-card p-center" style="margin-top:14vh"><div class="p-spin">${ICON.ghost}</div><h2 class="p-h">Can't reach the game</h2><p class="p-p">Check your connection and try again.</p><button class="btn block" style="margin-top:16px" onclick="location.reload()">Try again</button></div></div>`;
+      return;
+    }
+    room = { meta, async: { list: A.list }, settings: { hand: A.set.hand, lightning: A.set.lightning }, players: {}, presence: {}, guesses: {}, results: {}, state: { phase: 'await', index: -1 } };
+    A.items = asyncItems(room); A.n = A.items.length;
+    if (!A.n) { app.innerHTML = `<div class="p-wrap"><div class="panel p-card p-center" style="margin-top:14vh"><h2 class="p-h">This game has no items</h2><p class="p-p">Ask the host for a new link.</p></div></div>`; return; }
+    preloadPhotos(A.items.slice(0, 2));
+    clearInterval(ticker); ticker = setInterval(asyncTick, 200);
+    const id = loadId(code);
+    if (id) {
+      let p = null;
+      try { p = await getWithin(abase() + '/players/' + id); } catch (e) { console.warn(e); }
+      if (p && p.name) await loadProgress(id, p); else dropId(code);
+    }
+    unsub = store.on(abase() + '/meta', onMeta);   // the close, a close time, a reopen (polled every 30 s on a real game)
+    if (!pid && !isClosed() && !closingNow()) showAsyncJoin();
+    else asyncRoute();
+  }
+
+  // Pick up a game: this browser's copy first, then whatever the room has that it doesn't (a new device, a cleared cache).
+  async function loadProgress(id, p) {
+    pid = id; saveId(code, id);
+    const local = readProg() || {};
+    const P = Object.assign(blankProg(), local.prog || {});
+    ['g', 'lk', 'rv'].forEach(k => { P[k] = Object.assign({}, P[k] || {}); });
+    const si = typeof p.i === 'number' ? p.i : null;
+    if (si != null && (P.i == null || si > P.i)) { P.i = si; P.shownAt = p.shownAt || clockNow(); }
+    if (p.done) { P.done = true; P.i = Math.max(P.i == null ? 0 : P.i, A.n); }
+    const need = [];
+    for (let k = 0; k <= Math.min(P.i == null ? -1 : P.i, A.n - 1); k++) if (!(P.g[k] > 0) && !P.rv[k]) need.push(k);
+    if (need.length) {
+      const got = await Promise.all(need.map(k => store.get(abase() + '/guesses/' + k + '/' + id).catch(() => null)));
+      got.forEach((g, j) => { const k = need[j]; if (g && g.v > 0) { P.g[k] = g.v; P.lk[k] = P.lk[k] || 1; } else if (k < P.i) P.rv[k] = P.rv[k] || 1; });
+    }
+    A.prog = P; A.pend = Object.assign({}, local.pend || {});
+    if (local.fun && typeof local.fun === 'object') A.fun = local.fun;
+    room.players = { [id]: { name: p.name, poll: p.poll } };
+    rebuildResults();
+    saveProg();
+    if (Object.keys(A.pend).length) flushWrites();
+  }
+
+  // The results this phone can show: every item played so far, from this player's own guesses and the room's prices.
+  function rebuildResults() {
+    const P = prog(), me = room.players[pid] || {}, played = P.i == null ? -1 : P.i;
+    room.guesses = {}; room.results = {};
+    for (let k = 0; k < A.n; k++) {
+      const g = P.g[k];
+      if (g > 0) room.guesses[k] = { [pid]: { v: g, t: P.lk[k] || 0 } };
+      if (k < played || g > 0 || P.rv[k]) {
+        const old = A.res[k], r = asyncResult(A.items[k], viewAt(k), pid, me.name, g, old && old.g === g ? old.others : []);
+        if (old && old.g === g) { r.fetched = old.fetched; r.sampled = old.sampled; }
+        r.g = g; A.res[k] = r; room.results[k] = r;
+      }
+    }
+  }
+  function setItemState(k) {
+    const P = prog(), shownAt = P.shownAt || clockNow(), secs = A.set.secs;
+    room.state = { phase: 'item', index: k, shownAt, secs: secs || GAME.clockSeconds, endsAt: secs ? shownAt + secs * 1000 : 0, revealAt: 0 };
+    rebuildResults();
+    if (P.g[k] > 0 || P.rv[k]) { room.state.phase = 'reveal'; room.state.revealAt = P.lk[k] || P.rv[k] || shownAt; if (!A.res[k].fetched) fetchCrowd(k); }
+  }
+
+  // Which screen: the results once the game has closed, the done screen, the closed-for-guessing note, the intro, or an item.
+  function asyncRoute() {
+    A.defer = false;
+    if ((A.fun || A.carry && pid) && !isClosed() && !closingNow()) adoptFun();
+    if (funOn()) {
+      const F = A.fun;
+      if (F.done) room.state = { phase: 'udone', index: -1 };
+      else setItemState(F.i);
+      return render();
+    }
+    if (isClosed()) {
+      if (!A.final) { room.state = { phase: 'await', index: -1 }; render(); loadFinal(); return; }
+      rebuildResults(); A.headTotal = A.mine ? A.mine.total : null; room.state = { phase: 'aresults', index: -1 }; return render();
+    }
+    if (!pid) { if (!closingNow()) return showAsyncJoin(); room.state = { phase: 'aclosing', index: -1 }; return render(); }   // (too late to join: the results are on the way)
+    const P = A.prog;
+    if (P.done) { rebuildResults(); room.state = { phase: 'adone', index: -1 }; render(); loadBoard(); return; }
+    if (closingNow()) { rebuildResults(); room.state = { phase: 'aclosing', index: -1 }; return render(); }
+    if (P.i == null) { room.state = { phase: 'aintro', index: -1 }; return render(); }
+    setItemState(P.i); render();
+  }
+
+  function renderAsync() {
+    if (!room) return;
+    const st = room.state || { phase: 'await' }, ph = st.phase, scene = ph === 'item' || ph === 'reveal';
+    const key = scene ? (funOn() ? 'f' : '') + 'scene:' + st.index + ':' + st.shownAt : ph + ':' + A.screenN;
+    const me = (room.players && room.players[pid]) || { name: '' };
+    Lightning.on = A.set.lightning;
+    if (key !== screen) {
+      clearLater(); if (cur && cur.destroy) cur.destroy();
+      screen = key;
+      const main = shell();
+      $('#pwrap').classList.toggle('wide', scene);
+      cur = (scene ? BUILD.scene : (BUILD[ph] || BUILD.await))(stateOf(room), me);
+      if (!calmMotion()) cur.el.classList.add('p-in');
+      main.innerHTML = ''; main.appendChild(cur.el);
+      toTop();
+      if (cur.mounted) cur.mounted();
+      if (!batTimer) startBats();
+    } else if (cur && cur.update) cur.update(me);
+    paintMe();
+  }
+
+  function asyncTick() {
+    if (!active || !room || !A) return;
+    const now = clockNow(), s = room.state || {};
+    if (s.phase === 'item') {
+      if (!funOn() && (isClosed() || closingNow())) { asyncRoute(); return; }
+      if (s.endsAt && now >= s.endsAt && !(prog().g[s.index] > 0)) {
+        // Time's up with nothing locked in: the Time's up card for a moment, then the reveal anyway (0 points).
+        if (!A.upAt) A.upAt = now;
+        else if (now - A.upAt >= 1800) {
+          A.upAt = 0;
+          const P = prog(); P.rv[s.index] = now; saveProg();
+          if (!funOn()) queueWrite({ [`players/${pid}/at`]: store.TS });
+          rebuildResults();
+          room.state = Object.assign({}, s, { phase: 'reveal', revealAt: now });
+          fetchCrowd(s.index); render(); return;
+        }
+      } else A.upAt = 0;
+    } else if (s.phase === 'reveal') { if (!funOn()) markNext(); }
+    else if (s.phase === 'adone' && cur && cur.closing !== undefined && cur.closing !== closingNow()) cur.update(room.players[pid] || {});
+    if (cur && cur.tick) cur.tick(now);
+  }
+
+  // A guess, locked on submit: the drums start at once (timed from this moment), the guess is saved (and retried until
+  // it lands), and the guesses others have made on this item are fetched for the crowd marker.
+  function asyncLock(i, v) {
+    const s = room.state; if (!s || s.phase !== 'item' || s.index !== i) return;
+    if (!funOn() && (isClosed() || closingNow())) return asyncRoute();
+    if (s.endsAt && clockNow() >= s.endsAt) return;
+    const P = prog(), now = clockNow();
+    P.g[i] = v; P.lk[i] = now; saveProg();
+    rebuildResults();
+    room.state = Object.assign({}, s, { phase: 'reveal', revealAt: now });
+    if (!funOn()) {
+      const t = asyncTotal();
+      queueWrite({ [`guesses/${i}/${pid}`]: { v, t: store.TS }, [`players/${pid}/total`]: t, [`players/${pid}/at`]: store.TS });
+    }
+    fetchCrowd(i);
+    render();
+  }
+
+  // The crowd so far (this item's other guesses) and the running place among everyone's totals so far. The result
+  // object is filled in place, so a reveal still spinning lands with it.
+  async function fetchCrowd(i) {
+    const res = A.res[i]; if (!res) return;
+    try {
+      // (a big room sends a sample of the item's guesses, plenty for the crowd's middle guess and your share of it)
+      const gp = abase() + '/guesses/' + i, gq = store.query ? store.query(gp, 'orderBy=%22%24key%22&limitToLast=' + CROWD_SAMPLE) : store.get(gp);
+      const [gs, nm] = await Promise.all([gq, funOn() || !pid ? Promise.resolve('-') : store.get(abase() + '/players/' + pid + '/name')]);
+      if (nm === null) return removedByHost();
+      if (A.res[i] !== res) return;
+      res.others = ents(gs).filter(([q, g]) => q !== pid && g && g.v > 0).map(([, g]) => g.v);
+      res.n = (res.scores[pid] ? 1 : 0) + res.others.length; res.fetched = true; res.sampled = ents(gs).length >= CROWD_SAMPLE;
+      if (active && cur && cur.update) cur.update(room.players[pid] || {});
+    } catch (e) { console.warn('[crowd]', e); }
+  }
+
+  // Writes wait here until the room has them, and are kept in this browser in case the page closes first.
+  let flushing = false, retryT = 0, retryMs = 2000, savingT = 0, savingPill = null;
+  function queueWrite(obj) { Object.assign(A.pend, obj); saveProg(); flushWrites(); }
+  async function flushWrites() {
+    if (flushing || !A || !Object.keys(A.pend).length) return;
+    flushing = true; clearTimeout(retryT);
+    const body = A.pend; A.pend = {};
+    clearTimeout(savingT); savingT = setTimeout(() => showSaving(true), 2500);
+    let ok = await store.update(abase(), body);
+    if (!ok && await sdkInstead()) ok = await store.update(abase(), body);
+    flushing = false;
+    if (ok) {
+      retryMs = 2000; saveProg();
+      if (Object.keys(A.pend).length) flushWrites(); else { clearTimeout(savingT); showSaving(false); }
+    } else {
+      A.pend = Object.assign(body, A.pend); saveProg();
+      showSaving(true);
+      retryT = setTimeout(flushWrites, retryMs); retryMs = Math.min(30000, retryMs * 2);
+    }
+  }
+  function showSaving(on) {
+    if (on && !savingPill) { savingPill = document.createElement('div'); savingPill.className = 'offline-pill saving'; savingPill.textContent = 'Saving…'; document.body.appendChild(savingPill); }
+    if (!on && savingPill) { savingPill.remove(); savingPill = null; }
+  }
+  addEventListener('online', () => { if (A) { retryMs = 2000; flushWrites(); } });
+
+  // On to the next item (its clock starts now), or the done screen after the last.
+  function asyncNext() {
+    const P = prog(), s = room.state || {}, k = (typeof s.index === 'number' ? s.index : -1) + 1;
+    if (!funOn() && (isClosed() || closingNow())) return asyncRoute();   // it closed while you were on a result
+    if (k >= A.n) return asyncFinish();
+    P.i = k; P.shownAt = clockNow(); saveProg();
+    if (funOn() && !isClosed() && !closingNow()) return asyncRoute();   // (reopened while playing for fun: these count now)
+    if (!funOn()) queueWrite({ [`players/${pid}/i`]: k, [`players/${pid}/shownAt`]: P.shownAt, [`players/${pid}/at`]: store.TS });
+    setItemState(k); render();
+  }
+  function asyncFinish() {
+    const P = prog();
+    P.done = true; P.i = A.n; saveProg();
+    if (funOn() && !isClosed() && !closingNow()) return asyncRoute();   // (reopened while playing for fun: these count now)
+    if (funOn()) { room.state = { phase: 'udone', index: -1 }; return render(); }
+    const t = asyncTotal();
+    queueWrite({ [`players/${pid}/done`]: true, [`players/${pid}/i`]: A.n, [`players/${pid}/at`]: store.TS, [`players/${pid}/total`]: t });
+    asyncRoute();
+  }
+  function asyncNextHTML(i, N) {
+    const last = i >= N - 1, shut = shutLabel();
+    if (shut) return `<div class="a-next">${shut.note}<button class="btn big block" type="button" data-anext>${shut.label}</button></div>`;
+    return `<div class="a-next"><button class="btn big block" type="button" data-anext>${last ? (funOn() ? 'See your score' : 'See how you did') : `Next item (${i + 2} of ${N})`}</button>${last || i > 0 ? '' : '<p class="p-small">Each clock starts when you tap. You can stop after any item and come back with the same link.</p>'}</div>`;
+  }
+  // The game closed (or reached its close time) while you were on a result: Next leads there instead.
+  function shutLabel() {
+    if (funOn() || !(isClosed() || closingNow())) return null;
+    return isClosed() ? { label: 'See the results', note: `<p class="a-shut">${ICON.lock}<span>The host just closed the game. Your guesses so far are in.</span></p>` }
+      : { label: 'Continue', note: `<p class="a-shut">${ICON.lock}<span>The game has closed for guesses. Your guesses so far are in.</span></p>` };
+  }
+  function markNext() {
+    const shut = shutLabel(), sig = shut ? shut.label : '';
+    if (A.marked === sig) return;
+    const btns = $$('#pmain [data-anext]'); if (!btns.length) return;
+    A.marked = sig;
+    const i = room.state.index, last = i >= A.n - 1;
+    const plain = last ? (funOn() ? 'See your score' : 'See how you did') : `Next item (${i + 2} of ${A.n})`;
+    btns.forEach(b => { b.textContent = shut ? shut.label : plain; });
+    const box = btns[0].closest('.a-next'), old = box && $('.a-shut', box);
+    if (old) old.remove();
+    if (shut && box) { box.insertAdjacentHTML('afterbegin', shut.note); $$('.p-small', box).forEach(n => n.remove()); }
+  }
+  function wireAsyncNext(root) {
+    $$('[data-anext]', root).forEach(b => {
+      b.onclick = () => { if (b.disabled) return; b.disabled = true; asyncNext(); };
+      if (FINE_POINTER && document.visibilityState === 'visible' && b.closest('.a-next')) { try { b.focus({ preventScroll: true }); } catch (e) { /* ignore */ } }
+    });
+  }
+  function asyncTotHTML(res, i, N) {
+    const left = N - 1 - i;
+    const tail = left > 0 ? `<b>${left}</b> ${left === 1 ? 'item' : 'items'} to go` : funOn() ? 'just for fun' : 'all done!';
+    return `<div class="tot2"><b>${fmtPts(asyncTotal())}</b> ${left > 0 ? 'so far' : 'total'} · ${tail}</div>`;
+  }
+
+  // The room's meta: the close (or a close time, or a reopen). A player watching a reveal finishes it first; Next routes.
+  function onMeta(m) {
+    if (!active || !A) return;
+    if (!m) { kicked({ title: 'This game has ended', text: `The host has taken game ${code} down.` }); return; }
+    const was = A.meta || {};
+    A.meta = m; room.meta = m;
+    const flipped = (was.status === 'closed') !== (m.status === 'closed');
+    if (m.status !== 'closed') { A.final = null; A.mine = null; A.headTotal = null; }
+    else if (!flipped && m.talliedAt !== was.talliedAt && A.final) {   // the board was counted again (a fixed price, a removed player)
+      A.final = null;
+      if (!funOn() && ['aresults', 'await'].includes(room.state && room.state.phase)) { A.screenN++; asyncRoute(); return; }
+    }
+    if (flipped && m.status === 'closed') notifyClosed();
+    if (funOn()) {   // reopened while this phone shows its just-for-fun score: those guesses count now (see adoptFun)
+      if (flipped && m.status !== 'closed' && room.state && room.state.phase === 'udone') { A.fun.on = false; saveProg(); A.screenN++; asyncRoute(); }
+      return;
+    }
+    const ph = room.state && room.state.phase;
+    if (ph === 'reveal' && (flipped || closingNow())) { A.defer = true; markNext(); return; }
+    if (flipped || ph === 'item' && closingNow() || ['aintro', 'adone', 'aclosing', 'await'].includes(ph)) {
+      if (flipped || ph === 'item' || ph === 'aintro' && closingNow()) asyncRoute();
+      else if (cur && cur.update) cur.update(room.players[pid] || {});
+    }
+  }
+  async function loadFinal() {
+    const b = abase() + '/async/final';
+    try {
+      const [info, board, poll, mine] = await Promise.all([store.get(b + '/info'), store.get(b + '/board'), store.get(b + '/poll'), pid ? store.get(b + '/players/' + pid) : Promise.resolve(null)]);
+      if (!info) { setTimeout(() => { if (active && isClosed() && !A.final) loadFinal(); }, 5000); return; }
+      A.final = { info, board: ents(board).map(([, e]) => e).filter(e => e && e.name), poll: POLL.options.map((_, k) => (poll && poll[k]) || { n: 0, names: [] }) };
+      A.mine = mine && typeof mine.rank === 'number' ? mine : null;
+      A.headTotal = A.mine ? A.mine.total : null;
+      if (isClosed() && !funOn()) asyncRoute();
+    } catch (e) { console.warn('[final]', e); setTimeout(() => { if (active && isClosed() && !A.final) loadFinal(); }, 8000); }
+  }
+  function notifyClosed() {
+    if (!A.notify || !('Notification' in window) || Notification.permission !== 'granted') return;
+    try { new Notification('The Price Is Fright', { body: 'The results are in! Come see where you landed.', tag: 'tpif-' + code }); } catch (e) { /* ignore */ }
+  }
+
+  // A safety net for the plain requests: if this page can read the game but its writes are refused (a company proxy, an
+  // old browser), switch to the Firebase SDK, the way the live game talks to the database. It holds a connection, so
+  // it's only for the pages that need it.
+  let sdkTried = false;
+  async function sdkInstead() {
+    if (sdkTried || !store || store.mode !== 'rest' || !store.stats || Date.now() - store.stats.readAt > 30000) return false;
+    try { await store.get(abase() + '/meta'); } catch (e) { return false; }   // reads fail too: just offline, so keep trying as we are
+    sdkTried = true;
+    const old = store;
+    try {
+      await initStore();
+      if (store.mode !== 'firebase') throw new Error('no SDK');
+      console.warn('[database] writes were refused over plain requests: using the Firebase SDK on this page');
+      if (unsub) { unsub(); unsub = store.on(abase() + '/meta', onMeta); }
+      return true;
+    } catch (e) { console.warn('[database] SDK fallback failed', e); store = old; sdkTried = false; return false; }
+  }
+
+  // The host removed this player: stop saving, take back what our own writes brought back since, and say so.
+  function removedByHost() {
+    if (!A || !pid || pid === 'pfun') return;
+    A.pend = {}; clearTimeout(retryT); showSaving(false);
+    const up = { ['players/' + pid]: null };
+    for (let k = 0; k < A.n; k++) up[`guesses/${k}/${pid}`] = null;
+    store.update(abase(), up);
+    KV.del(progKey());
+    kicked({ title: "You've left the game", text: 'The host removed you from this game. If that was a mistake, you can join again.' });
+  }
+
+  // The board so far, for the done screen: one read of the room's players (refreshed now and then while it's open).
+  let boardT = 0, boardN = 0, boardAt = 0;
+  async function loadBoard() {
+    clearTimeout(boardT); boardN++; boardAt = Date.now();
+    try {
+      const pl = await store.get(abase() + '/players');
+      if (!active || !A) return;
+      const all = ents(pl).filter(([, p]) => p && p.name);
+      if (pid && !all.some(([q]) => q === pid)) return removedByHost();
+      const fin = all.filter(([q, p]) => p.done || q === pid).map(([q, p]) => ({ pid: q, name: p.name, total: q === pid ? asyncTotal() : (+p.total || 0) }));
+      fin.sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
+      let r = 0, lastV = null; fin.forEach((e, k) => { if (e.total !== lastV) { r = k + 1; lastV = e.total; } e.rank = r; });
+      A.board = { fin, played: all.filter(([, p]) => p.shownAt || typeof p.i === 'number').length };
+      if (cur && cur.board) cur.board();
+    } catch (e) { console.warn('[board]', e); }
+    if (room && room.state && room.state.phase === 'adone' && boardN < 10) boardT = setTimeout(() => { if (!document.hidden) loadBoard(); }, 60000);
+  }
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && A && room && room.state && room.state.phase === 'adone' && Date.now() - boardAt > 300000) loadBoard(); });
+
+  // The result card for the chat (spoiler-free) and the share button that sends it.
+  function myShareText() {
+    const P = prog(), closed = isClosed() && !!A.mine && !funOn();
+    const tiles = A.items.map((it, k) => tileOf(P.g[k], viewAt(k).price));
+    const name = (room.players[pid] || {}).name || '';
+    return shareCardText({ name, tiles, url: shareJoinUrl(code), closed, shut: isClosed() || closingNow(), fun: funOn(), total: closed ? A.mine.total : asyncTotal(), place: closed ? A.mine.rank : 0, of: closed && A.final ? A.final.info.count : 0 });
+  }
+  async function shareText(text) {
+    if (navigator.share && !FINE_POINTER) {   // phones: the share sheet (laptops copy instead: that's what goes in Teams)
+      try { await navigator.share({ text }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
+    }
+    toast(await copyText(text) ? 'Copied. Paste it in the chat.' : 'Copy this: ' + text);
+  }
+  const shareBlock = title => `<div class="panel p-card a-share"><h3 class="p-h a-h3">${title}</h3><pre class="a-card" data-card></pre>
+      <button class="btn block" type="button" data-share>${ICON.phone}Share my result</button><p class="p-small">No prices or item names, so it won't spoil it for anyone.</p></div>`;
+  function wireShare(root) {
+    const paint = () => { $$('[data-card]', root).forEach(n => { n.textContent = myShareText(); }); };
+    paint();
+    $$('[data-share]', root).forEach(b => { b.onclick = () => shareText(myShareText()); });
+    return paint;
+  }
+  // Every guess against its price, for "See my guesses".
+  function recapHTML() {
+    const P = prog();
+    return `<div class="a-recap">${A.items.map((it, k) => {
+      const v = viewAt(k), g = P.g[k], pts = g > 0 ? closeness(g, v.price) * (it.double ? 2 : 1) : 0, bull = g > 0 && Math.abs(g - v.price) < 0.005;
+      const seen = g > 0 || P.rv[k] || k < (P.i == null ? 0 : P.i);
+      return `<div class="ar${bull ? ' bull' : ''}"><span class="n">${k + 1}</span><span class="t">${esc(it.name)}</span>
+        <span class="g">${seen ? (g > 0 ? fmtShort(g) : '—') : ''}</span><span class="pr">${seen ? fmtShort(v.price) : ''}</span><span class="pt">${seen ? (bull ? '🎯 ' : '') + fmtPts(pts) : ''}</span></div>`;
+    }).join('')}</div>`;
+  }
+  function waitLine() {
+    const m = A.meta || {};
+    if (closingNow()) return '<b>Closed.</b> The host will post the results soon.';
+    return m.closeAt ? `Results drop <b>${esc(fmtDrop(m.closeAt))}</b>.` : 'Results drop when the host closes the game.';
+  }
+
+  /* ---------- joining ---------- */
+  function showAsyncJoin(err) {
+    if (cur && cur.destroy) cur.destroy();
+    clearLater(); screen = ''; cur = null;
+    const savedName = KV.get('tpif:name') || '', m = A.meta || {};
+    app.innerHTML = `<div class="p-wrap"><div class="p-join">
+      <div class="logo"><span class="l-top">The Price Is</span><span class="l-fright">Fright</span><span class="l-avoya">Avoya Marketing</span></div>
+      <p class="lede">${A.n} items. Guess the price.<br>Play at your own pace.<br>${m.closeAt ? `Results drop ${esc(fmtDrop(m.closeAt))}.` : 'Results drop when the host closes the game.'}</p>
+      <form class="panel p-card p-stack" id="ajf" novalidate>
+        <div class="field"><label for="ajn">Your name</label><input id="ajn" class="input" maxlength="18" autocomplete="nickname" placeholder="First name + last initial" value="${esc(savedName)}"></div>
+        <p class="p-err" id="jerr" role="alert">${esc(err || '')}</p>
+        <button class="btn block big" type="submit" id="jb">Let's play</button>
+      </form>
+      <p class="p-small">No sign-up. This browser remembers your game, so you can stop and come back with the same link.</p>
+    </div></div>`;
+    const jn = $('#ajn'); jn.focus();
+    $('#ajf').addEventListener('submit', e => { e.preventDefault(); asyncJoin(jn.value); });
+  }
+  const cleanName = n => Array.from(String(n || '').replace(/\s+/g, ' ').trim()).slice(0, 18).join('').trim();
+  async function asyncJoin(name, fresh) {
+    const errEl = $('#jerr'), btn = $('#jb'), label0 = btn ? btn.textContent : '';
+    const fail = m => { if (errEl) errEl.textContent = m; if (btn) { btn.disabled = false; btn.textContent = label0; } };
+    name = cleanName(name);
+    if (!name) return fail('Add your name so we know who to cheer for.');
+    if (btn) { btn.disabled = true; btn.textContent = 'Joining…'; }
+    try {
+      const players = await getWithin(abase() + '/players');
+      const all = ents(players).filter(([, p]) => p && p.name);
+      A.joinedCount = all.filter(([, p]) => p.shownAt || typeof p.i === 'number').length;
+      const same = all.find(([, p]) => p.name.toLowerCase() === name.toLowerCase());
+      if (same && !fresh) return sameName(same, name);
+      if (same) return fail(`There's a ${same[1].name} in this game too. Try another initial?`);
+      const id = rid();
+      let ok = await store.set(abase() + '/players/' + id, { name, joined: store.TS, at: store.TS });
+      if (!ok && await sdkInstead()) ok = await store.set(abase() + '/players/' + id, { name, joined: store.TS, at: store.TS });
+      if (!ok) return fail("Couldn't join. Check your connection and try again.");
+      KV.set('tpif:name', name);
+      pid = id; saveId(code, id);
+      A.prog = blankProg(); A.pend = {}; room.players = { [id]: { name } };
+      saveProg(); asyncRoute();   // (with guesses carried from playing for fun, adoptFun counts them now)
+    } catch (e) { console.error(e); fail(e && e.timeout ? "Couldn't reach the game. Check your connection and try again." : 'Something went wrong joining. Check your connection and try again.'); }
+  }
+  // Two people can share a first name; one person can play on two devices. So: is that you?
+  function sameName([id, p], name) {
+    const first = esc(p.name);
+    app.innerHTML = `<div class="p-wrap"><div class="p-join">
+      <div class="logo"><span class="l-top">The Price Is</span><span class="l-fright">Fright</span><span class="l-avoya">Avoya Marketing</span></div>
+      <div class="panel p-card p-stack a-same">
+        <h2 class="p-h">There's already a ${first} in this game.</h2><p class="p-p">Is that you?</p>
+        <button class="btn block big" type="button" id="asy">Yes, continue my game</button>
+        <button class="btn ghost block" type="button" id="asn">No, I'm a different ${first}</button>
+        <form id="asf" class="p-stack" hidden novalidate>
+          <div class="field"><label for="asi">Add your last initial</label><input id="asi" class="input" maxlength="2" autocomplete="off" autocapitalize="characters" placeholder="R"></div>
+          <p class="p-err" id="jerr" role="alert"></p>
+          <button class="btn block" type="submit" id="jb">Join</button>
+        </form>
+      </div></div></div>`;
+    $('#asy').onclick = async () => {
+      const b = $('#asy'); b.disabled = true; b.textContent = 'Picking up your game…';
+      try { const p2 = await getWithin(abase() + '/players/' + id); await loadProgress(id, p2 && p2.name ? p2 : p); KV.set('tpif:name', p.name); asyncRoute(); }
+      catch (e) { console.error(e); b.disabled = false; b.textContent = 'Yes, continue my game'; toast("Couldn't reach the game. Try again."); }
+    };
+    $('#asn').onclick = () => { $('#asf').hidden = false; $('#asn').hidden = true; $('#asi').focus(); };
+    const ini = $('#asi'), base0 = name.split(' ')[0], base = base0.charAt(0).toUpperCase() + base0.slice(1);
+    const joinAs = () => cleanName(base + ' ' + ini.value.trim() + '.');
+    ini.addEventListener('input', () => { const v = ini.value.replace(/[^A-Za-z]/g, '').slice(0, 1).toUpperCase(); if (v !== ini.value) ini.value = v; $('#jb').textContent = v ? 'Join as ' + joinAs() : 'Join'; });
+    $('#asf').addEventListener('submit', e => { e.preventDefault(); const v = ini.value.trim(); if (!v) { $('#jerr').textContent = 'Add an initial, like R.'; return; } asyncJoin(joinAs(), true); });
+  }
+
+  /* ---------- the play-anytime screens ---------- */
+  BUILD.await = () => ({ el: mk('p-stack', `<div class="panel p-card p-center" style="margin-top:8vh"><div class="p-spin">${ICON.ghost}</div><h2 class="p-h">The results are in!</h2><p class="p-p">Counting up the board…</p></div>`) });
+
+  BUILD.aintro = (st, me) => {
+    const n = A.joinedCount, secs = A.set.secs, m = A.meta || {};
+    const el = mk('p-stack', `
+      <div class="panel p-card p-hello"><div class="p-spin">${ICON.ghost}</div><h2 class="p-h">You're in, ${esc(me.name)}!</h2>
+        <p class="p-p">All ${A.n} items play right here, at your own pace.</p>
+        <ul class="p-how">
+          <li><span class="ic">${ICON.cart}</span><span>Type a price and <b>lock it in</b>. For big numbers, type <b>1.5</b> and tap <b>million</b>.</span></li>
+          <li><span class="ic">${ICON.clock}</span><span>${secs ? `Each item gives you <b>${secs} seconds</b> once you open it.` : 'No clock: take your time on each item.'} You can stop after any item and come back with the same link.</span></li>
+          <li><span class="ic">${ICON.target}</span><span>Up to <b>1,000 points</b> for a close guess, plus <b>${fmtPts(GAME.closestBonus)}</b> for the closest guess on each item (added when the game closes). The <b>last item</b> is worth double.</span></li>
+        </ul>
+        <button class="btn big block a-start" type="button" data-anext>Start item 1</button>
+        <p class="p-small a-sub">${n ? `${n} ${n === 1 ? 'person has' : 'people have'} played so far · ` : ''}${waitLine()}</p></div>
+      ${pollCard(me, 'While you\'re here', 'Results come when the game closes.')}`);
+    wirePoll(el); wireAsyncNext(el);
+    return { el, update(me2) { syncPoll(el, me2); $('.a-sub', el).innerHTML = (n ? `${n} ${n === 1 ? 'person has' : 'people have'} played so far · ` : '') + waitLine(); } };
+  };
+
+  BUILD.aclosing = (st, me) => {
+    const P = A.prog, n = playedCount(P);
+    const el = mk('p-stack', `<div class="panel p-card p-center"><div class="p-spin">${ICON.lock}</div><h2 class="p-h">Closed for guesses</h2>
+      <p class="p-p">The host will post the results soon. Keep this open and they'll appear here, or come back with the same link.</p>
+      ${n ? `<p class="p-small" style="margin-top:12px">Your ${n === 1 ? 'first item counts' : `first ${n} items count`}: <b>${fmtPts(asyncTotal())}</b> points so far.</p>` : ''}</div>
+      ${n ? shareBlock('Share your result') : ''}
+      ${pid && me && me.name && typeof me.poll !== 'number' ? pollCard(me, 'One more thing', 'Results come with the final scores.') : ''}`);
+    if (n) wireShare(el);
+    wirePoll(el);
+    return { el, update(me2) { if (me2) syncPoll(el, me2); } };
+  };
+
+  BUILD.adone = (st, me) => {
+    const total = asyncTotal();
+    const notifyOK = 'Notification' in window && FINE_POINTER && Notification.permission !== 'denied';
+    const el = mk('p-stack', `
+      <div class="panel p-card p-center a-done"><div class="p-spin">${ICON.ghost}</div><h2 class="p-h">You're done, ${esc(me.name)}!</h2>
+        <div class="a-tot"><b>${fmtPts(total)}</b><small> points</small></div>
+        <p class="p-p a-place" data-place>Counting up the board…</p></div>
+      <div class="panel p-card a-wait"><p class="p-p" data-wait></p><p class="p-small">Keep this open and they'll appear here, or come back with the same link.</p>
+        ${notifyOK ? `<p class="p-small a-notify" data-notify></p>` : ''}</div>
+      ${shareBlock('Share your result')}
+      <div class="panel p-board a-board"><div class="hd"><h2>The board so far</h2><span data-n></span></div><div data-board><p class="p-small" style="margin:6px 4px">Loading…</p></div>
+        <p class="p-small a-note">Just the people who've finished. Closest-guess bonuses are added when the game closes, so places can still change.</p></div>
+      <details class="panel a-rcp"><summary>See my guesses</summary>${recapHTML()}</details>
+      ${typeof me.poll !== 'number' ? pollCard(me, 'One more thing', 'Results come when the game closes.') : ''}`);
+    wirePoll(el);
+    const paintCard = wireShare(el);
+    const out = { el, closing: closingNow() };
+    const paintWait = () => { out.closing = closingNow(); $('[data-wait]', el).innerHTML = waitLine(); };
+    const paintNotify = () => {
+      const n = $('[data-notify]', el); if (!n) return;
+      if (Notification.permission === 'granted') { A.notify = true; n.innerHTML = `${ICON.bell} We'll pop up a note here when the results are in (while this tab is open).`; return; }
+      n.innerHTML = `<button type="button" class="linkbtn">Tell me when the results are in</button>`;
+      $('button', n).onclick = () => { try { Promise.resolve(Notification.requestPermission()).then(paintNotify); } catch (e) { /* ignore */ } };
+    };
+    out.board = () => {
+      const B = A.board; if (!B) return;
+      const e = B.fin.find(x => x.pid === pid), top = B.fin.slice(0, 5), mineIn = top.some(x => x.pid === pid);
+      $('[data-place]', el).innerHTML = e ? `<b>${ordinal(e.rank)}</b> of ${B.fin.length} who've finished so far` : '';
+      $('[data-n]', el).textContent = `${B.fin.length} done · ${B.played} played`;
+      $('[data-board]', el).innerHTML = top.map((x, k) => boardRow(x, k)).join('') + (e && !mineIn ? `<div class="br-gap">···</div>` + boardRow(e, 5) : '');
+    };
+    out.update = me2 => { syncPoll(el, me2); paintWait(); paintCard(); };
+    out.mounted = () => {
+      paintWait(); paintNotify(); out.board();
+      // all 20 done: a little celebration, once
+      const k = 'tpif:adone:' + code + ':' + pid;
+      if (!KV.get(k)) { KV.set(k, '1'); later(250, () => { confetti(3800, 110); buzz([30, 50, 30, 50, 90]); }); }
+    };
+    out.destroy = () => clearTimeout(boardT);
+    return out;
+  };
+
+  // Played just for fun (after the close): your score and card, then back to the results.
+  BUILD.udone = (st, me) => {
+    const el = mk('p-stack', `<div class="panel p-card p-center a-done"><div class="p-spin">${ICON.ghost}</div><h2 class="p-h">All ${A.n} played!</h2>
+        <div class="a-tot"><b>${fmtPts(asyncTotal())}</b><small> points</small></div><p class="p-p">Just for fun: the board's already final.</p>
+        <button class="btn ghost block" type="button" id="aback" style="margin-top:14px">Back to the results</button></div>
+      ${shareBlock('Share your score')}
+      <details class="panel a-rcp"><summary>See my guesses</summary>${recapHTML()}</details>`);
+    wireShare(el);
+    $('#aback', el).onclick = () => { A.fun.on = false; saveProg(); A.screenN++; asyncRoute(); };
+    return { el };
+  };
+
+  // The results: a title card, the tombstone podium (played from the moment this phone shows it), your place, your
+  // closest-guess bonuses (revealed here for the first time), the poll and the end screen.
+  BUILD.aresults = (st, me) => {
+    const F = A.final, I = F.info || {}, count = I.count || F.board.length, mine = A.mine, P = A.prog;
+    const seenKey = 'tpif:aseen:' + code + ':' + (pid || 'new'), fresh = A.replay || !KV.get(seenKey);
+    A.replay = false;
+    const me2 = Object.assign({}, me, { poll: typeof me.poll === 'number' ? me.poll : -1 });   // (the poll's closed: no "last call" card)
+    const meE = mine ? { pid, name: me.name, total: mine.total, rank: mine.rank } : null;
+    const pod = podiumScreen({ at: fresh ? clockNow() + 2400 : 0 }, me2, F.board, 'Final results', `${count} ${count === 1 ? 'player' : 'players'} · ${A.n} items`, false, { me: meE, of: count });
+    const played = playedCount(P), partial = !!pid && mine && !P.done;
+    const champs = F.board.filter(e => e.rank === 1), names = esc(joinNames(champs.map(e => e.name)));
+    const cl = mine ? ents(mine.closest).map(([, k]) => +k) : [];
+    const FOLD = cl.length > 8 ? 7 : cl.length;
+    const bonusHTML = !mine || I.bonus === false ? '' : `<div class="panel p-card a-bonus"><div class="lab2">Closest-guess bonuses</div>${cl.length
+      ? `<h3 class="p-h a-h3">Closest guess on ${cl.length === 1 ? '1 item' : cl.length + ' items'}: +${fmtPts(mine.bonus)}</h3><ul class="a-bl">${cl.map((k, j) => `<li${j >= FOLD ? ' hidden' : ''}>${esc(A.items[k] ? A.items[k].name : 'Item ' + (k + 1))}${A.items[k] && A.items[k].double ? ' <span class="flag dbl">2×</span>' : ''}</li>`).join('')}${FOLD < cl.length ? `<li class="more"><button type="button" class="linkbtn" data-blmore>+${cl.length - FOLD} more</button></li>` : ''}</ul>`
+      : `<p class="p-p" style="margin-top:6px">No closest guesses this time. Someone always got there first!</p>`}</div>`;
+    const votes = F.poll || [], vt = votes.reduce((s, v) => s + (v.n || 0), 0), vmax = Math.max(1, ...votes.map(v => v.n || 0));
+    const pollHTML = `<div class="panel p-card p-poll a-poll"><div class="lab2">Poll results</div><h2 class="p-h" style="margin-top:8px;font-size:24px">${esc(POLL.question)}</h2>
+      <p class="p-small" style="margin:0">${vt ? `${vt} ${vt === 1 ? 'person' : 'people'} answered` : 'Nobody answered the poll this time'}</p>${POLL.options.map((o, k) => ({ o, k, v: votes[k] || { n: 0, names: [] } })).sort((a, b) => (b.v.n || 0) - (a.v.n || 0) || a.k - b.k).map(({ o, k, v }) => {
+        const n = v.n || 0, top = vt && n === vmax;
+        return `<div class="prw on${top ? ' top' : ''}"><div class="lb"><span>${esc(o)}${top ? '<span class="tp">Top pick</span>' : ''}${me.poll === k ? '<span class="yp">Your pick</span>' : ''}</span><span class="n">${n}<small>${vt ? Math.round(n / vt * 100) : 0}%</small></span></div>
+          <div class="trk"><i style="width:${(n / vmax * 100).toFixed(1)}%"></i></div>${n ? `<div class="nms">${esc(ents(v.names).map(([, x]) => x).join(', '))}${n > ents(v.names).length ? ` and ${n - ents(v.names).length} more` : ''}</div>` : ''}</div>`;
+      }).join('')}</div>`;
+    const el = mk('p-stack', '');
+    if (partial) el.appendChild(mk('panel p-card a-partial', `<p class="p-p">The game closed while you were playing: your ${played === 1 ? 'first item' : `first ${played} items`} counted.</p>${played < A.n ? `<button class="btn ghost block" type="button" data-fun style="margin-top:12px">Finish the rest for fun</button>` : ''}`));
+    if (!mine) el.appendChild(mk('panel p-card a-partial', `<h2 class="p-h" style="font-size:24px">${pid && me.name ? 'The game closed before you got to play.' : 'This game has closed.'}</h2><p class="p-p">Here's how it went.</p><button class="btn block" type="button" data-fun style="margin-top:14px">Play it just for fun</button><p class="p-small" style="margin:8px 0 0">Your score won't go on the board.</p>`));
+    el.appendChild(pod.el);
+    if (bonusHTML) el.insertAdjacentHTML('beforeend', bonusHTML);
+    if (I.corrected) el.insertAdjacentHTML('beforeend', `<p class="p-small a-corr">A price was corrected after the game closed, and the board was counted again with the right one.</p>`);
+    if (mine) el.insertAdjacentHTML('beforeend', shareBlock('Share your result'));
+    if (pid && played) el.insertAdjacentHTML('beforeend', `<details class="panel a-rcp"><summary>See my guesses</summary>${recapHTML()}</details>`);
+    if (vt) el.insertAdjacentHTML('beforeend', pollHTML);   // (nobody answered: nothing to show)
+    el.insertAdjacentHTML('beforeend', `<div class="panel p-end"><div class="ghost-float" style="left:8px;top:16px" aria-hidden="true">${ICON.bigGhost}</div><div class="ghost-float" style="right:10px;bottom:22px;width:40px;animation-delay:-2s" aria-hidden="true">${ICON.bigGhost}</div>
+      <div class="logo"><span class="l-top">The Price Is</span><span class="l-fright">Fright</span><span class="l-avoya">Avoya Marketing</span></div>
+      <h2>Thanks for playing!</h2>${champs.length ? `<div class="champ">Congratulations: <b>${names}</b></div>` : ''}
+      ${mine ? `<div class="mine2"><span>You: ${ordinal(mine.rank)} of ${count} · ${fmtPts(mine.total)} pts</span></div>` : ''}
+      <div class="hh">Happy Halloween!</div><p class="p-small"><button type="button" class="linkbtn" data-replay>Replay the podium</button></p></div>`);
+    if (mine) wireShare(el);
+    $$('[data-fun]', el).forEach(b => { b.onclick = () => startFun(); });
+    $$('[data-blmore]', el).forEach(b => { b.onclick = () => { $$('.a-bl li[hidden]', el).forEach(li => { li.hidden = false; }); b.closest('li').remove(); }; });
+    $('[data-replay]', el).onclick = () => { A.replay = true; A.screenN++; asyncRoute(); };
+    return {
+      el, update: pod.update,
+      mounted() {
+        KV.set(seenKey, '1');
+        if (fresh) {
+          const fb = mk('fin-banner p-fbanner', `<div class="fb"><div class="t1">The results are in</div><div class="t2">${count} ${count === 1 ? 'player' : 'players'}</div></div>`);
+          document.body.appendChild(fb); later(2800, () => fb.remove());
+          later(260, () => Lightning.strike({ big: true, sound: false }));
+        }
+        pod.mounted();
+      },
+      destroy() { $$('.p-fbanner').forEach(n => n.remove()); }
+    };
+  };
+
+  // The host reopened the game after this phone played on just for fun. Those were blind guesses too (the price shows
+  // only after the guess), so they count now: they join this player's real progress and go to the room. Someone who
+  // never joined keeps them until they do.
+  function adoptFun() {
+    const F = A.carry && pid ? A.carry : A.fun; A.fun = null; A.carry = null;
+    if (!F) return;
+    if (!pid || pid === 'pfun') {
+      pid = null; room.players = {}; A.prog = blankProg(); A.carry = Object.assign({}, F, { shownAt: 0 });   // (the next item's clock starts once they're in)
+      if (Object.values(F.g || {}).some(v => v > 0)) setTimeout(() => toast('The host reopened the game! Join, and the guesses you just made will count.'), 600);
+      return;
+    }
+    const P = A.prog, up = {}, g = F.g || {}, lk = F.lk || {}, rv = F.rv || {};
+    let got = 0;
+    for (let k = 0; k < A.n; k++) {
+      if (P.g[k] > 0 || P.rv[k]) continue;
+      if (g[k] > 0) { P.g[k] = g[k]; P.lk[k] = lk[k] || clockNow(); up[`guesses/${k}/${pid}`] = { v: g[k], t: store.TS }; got++; }
+      else if (rv[k]) P.rv[k] = rv[k];
+    }
+    const fi = F.done ? A.n : F.i == null ? -1 : F.i, pi = P.done ? A.n : P.i == null ? -1 : P.i;
+    if (fi > pi) { if (fi >= A.n) { P.done = true; P.i = A.n; } else { P.i = fi; P.shownAt = F.shownAt || clockNow(); } }
+    rebuildResults();
+    Object.assign(up, { [`players/${pid}/i`]: P.i == null ? 0 : P.i, [`players/${pid}/total`]: asyncTotal(), [`players/${pid}/at`]: store.TS });
+    if (P.shownAt) up[`players/${pid}/shownAt`] = P.shownAt;
+    if (P.done) up[`players/${pid}/done`] = true;
+    A.headTotal = null; queueWrite(up);
+    if (got) setTimeout(() => toast(`The host reopened the game, so your ${got === 1 ? 'just-for-fun guess counts' : `${got} just-for-fun guesses count`} now.`), 600);
+  }
+  // Unranked play after the close: the rest of the items (or all of them, for someone new), with nothing saved to the room.
+  function startFun() {
+    const P = A.prog, me = room.players[pid];
+    if (!pid || !me) { pid = pid || 'pfun'; room.players = { [pid]: { name: KV.get('tpif:name') || '' } }; }
+    const from = pid !== 'pfun' && P.i != null ? Math.min(P.i, A.n - 1) : 0;
+    A.fun = null; rebuildResults();
+    const plus = A.mine && pid !== 'pfun' ? Math.max(0, A.mine.total - asyncTotal()) : 0;   // the closest-guess bonuses already won
+    A.fun = Object.assign(pid !== 'pfun' ? JSON.parse(JSON.stringify(P)) : blankProg(), { on: true, done: false, plus });
+    A.fun.i = from; A.fun.shownAt = clockNow();
+    A.headTotal = null; saveProg(); A.screenN++;
+    asyncRoute();
   }
 }
 /* ============================== DISPLAY (the shared screen) ============================== */
@@ -4228,9 +5365,9 @@ function DisplayApp(code, key) {
 
   store.on(roomPath(code), r => {
     room = r;
-    if (!ctl && key && r && r.meta && r.meta.key === key) becomeHost();
+    if (!ctl && key && r && r.meta && r.meta.key === key && !isAsync(r)) becomeHost();
     if (ctl) ctl.setRoom(r);
-    if (r && r.meta) Lightning.on = settingsOf(r).lightning;
+    if (r && r.meta) Lightning.on = isAsync(r) ? asyncSettingsOf(r).lightning : settingsOf(r).lightning;
     render();
     reportSound();
   });
@@ -4248,6 +5385,12 @@ function DisplayApp(code, key) {
   function render() {
     let k, build;
     if (!room || !room.meta) { k = 'missing'; build = () => ({ el: mk('screen', waitHTML(`Can't find room ${esc(code)}`, 'Start a new game from the host console, then open the big screen from there.')) }); }
+    else if (isAsync(room)) {
+      // A play-anytime game: the invite while it's open (for a hallway TV or a meeting share), the podium once it's closed.
+      const fin = room.async && room.async.final, closed = room.meta.status === 'closed';
+      k = 'async:' + (closed ? (fin && fin.info ? 'res:' + JSON.stringify(fin.board) : 'wait') : 'open');
+      build = () => !closed ? BUILD.ainvite() : fin && fin.info ? BUILD.aresults(fin) : { el: mk('screen', waitHTML('The results are in!', 'Counting up the board…')) };
+    }
     else {
       const st = stateOf(room);
       const scene = st.phase === 'item' || st.phase === 'reveal';
@@ -4284,6 +5427,20 @@ function DisplayApp(code, key) {
   }
   function stopBats() { clearTimeout(batTimer); }
 
+  // A panel of name bubbles that's full: smaller bubbles first, then "+N more" in place of the oldest (at the end).
+  function fitBubbleBox(box) {
+    if (!box || !box.clientHeight) return;
+    const old = $('.pb-more', box); if (old) old.remove();
+    const nodes = $$('.pb', box); nodes.forEach(n => { n.hidden = false; });
+    box.classList.toggle('many', nodes.length > 16); box.classList.remove('lots');
+    const over = () => box.scrollHeight > box.clientHeight + 1;
+    if (!over()) return;
+    box.classList.add('many', 'lots');
+    if (!over()) return;
+    const more = mk('pb pb-more', ''); box.appendChild(more);
+    for (let k = nodes.length - 1, n = 0; k > 0 && over(); k--) { nodes[k].hidden = true; n++; more.textContent = `+${n} more`; }
+  }
+
   /* ---------- marquee light bulbs around the lobby logo ---------- */
   function placeBulbs(box) {
     if (!box) return;
@@ -4306,6 +5463,47 @@ function DisplayApp(code, key) {
 
   /* ---------- screens ---------- */
   const BUILD = {
+    // A play-anytime game, while it's open: the QR code and the link, and how many have played.
+    ainvite() {
+      const n = asyncItems(room).length, m = room.meta;
+      const el = mk('screen s-lobby s-ainvite enter', `
+        <div class="lob-left">
+          <div class="marquee" id="mq"><div class="logo"><span class="l-top">The Price Is</span><span class="l-fright">Fright</span><span class="l-avoya">Avoya Marketing</span></div></div>
+          <div class="tagline">Play anytime, on your phone</div>
+          <div class="ai-sub" id="aisub"></div>
+        </div>
+        <div class="joincard panel"><div class="qrbox">${QR.svg(shareJoinUrl(code))}</div><div class="scan">Scan the code, or go to</div><div class="url${(prettyUrl() + '/?room=' + code).length > 38 ? ' long' : ''}">${urlBreaks(prettyUrl() + '/?room=' + code)}</div><div class="codelab">${n} items · about ten minutes</div></div>
+        <div class="lob-players panel"><h3 id="lpc"></h3><div class="pbubbles" id="pbs"></div></div>`);
+      const shown = new Map();
+      // the line under the logo: when the results drop, or (past the close time, before the host's console counts it) closed
+      let shut = null;
+      const paintSub = () => { const m2 = room.meta || {}; $('#aisub', el).textContent = shut ? 'Closed for guesses. Results soon!' : m2.closeAt ? 'Results drop ' + fmtDrop(m2.closeAt) : 'Results drop when the host closes the game'; };
+      function update() {
+        const pl = namedPlayers(room).filter(([, p]) => p.shownAt || typeof p.i === 'number' || p.done).sort((a, b) => (a[1].joined || 0) - (b[1].joined || 0));
+        const fin = pl.filter(([, p]) => p.done).length;
+        $('#lpc', el).innerHTML = pl.length ? `<span>${pl.length}</span> ${pl.length === 1 ? 'has' : 'have'} played${fin ? ` · <span>${fin}</span> finished` : ''}` : 'Be the first to play!';
+        shut = !!(room.meta.closeAt && store.serverNow() >= room.meta.closeAt); paintSub();
+        const box = $('#pbs', el), ids = new Set(pl.map(([q]) => q));
+        for (const [q, nd] of shown) if (!ids.has(q)) { nd.remove(); shown.delete(q); }
+        for (const [q, p] of pl) {   // newest first; a finished player's bubble turns green
+          let nd = shown.get(q);
+          if (!nd) { nd = mk('pb', ICON.ghost + '<span>' + esc(p.name) + '</span>'); box.prepend(nd); shown.set(q, nd); }
+          nd.classList.toggle('done', !!p.done);
+        }
+        fitBubbleBox(box);
+      }
+      return {
+        el, update,
+        tick(now) { const sh = !!(room.meta && room.meta.closeAt && now >= room.meta.closeAt); if (sh !== shut) { shut = sh; paintSub(); } },
+        mounted() { update(); startBats(); requestAnimationFrame(() => { placeBulbs($('#mq', el)); fitBubbleBox($('#pbs', el)); }); if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { placeBulbs($('#mq', el)); fitBubbleBox($('#pbs', el)); }); },
+        destroy: stopBats
+      };
+    },
+    // ...and once it's closed: the tombstone podium for the whole board, played from the moment this screen shows it.
+    aresults(fin) {
+      const board = ents(fin.board).map(([, e]) => e).filter(e => e && e.name), count = (fin.info && fin.info.count) || board.length;
+      return podium('screen s-final enter', board, 'Final results', `${count} ${count === 1 ? 'player' : 'players'} · ${asyncItems(room).length} items · play-anytime`, { at: store.serverNow() + 600 });
+    },
     lobby() {
       const el = mk('screen s-lobby enter', `
         <div class="lob-left">
@@ -4779,25 +5977,51 @@ function HostApp(code) {
   store.on(ROOT + '/overrides', o => { overrides = o || {}; if (ctl) ctl.setOverrides(overrides); paintSheet(); paintPool(); });
   store.on(ROOT + '/encorePool', p => { pool = p || null; if (ctl) ctl.setPool(pool); paintPool(); nowSig = ''; if (room && room.meta) paintNow(); });
 
-  if (!code) startScreen(); else openRoom(code);
+  if (!code) startScreen(); else route(code);
 
   /* ---------- start ---------- */
   function startScreen() {
     leaveRoom();
-    const last = KV.get('tpif:host:last');
+    const last = KV.get('tpif:host:last'), recent = recentRooms();
     app.innerHTML = `<div class="h-wrap"><div class="h-start">
       <div class="panel h-hero"><div class="logo"><span class="l-top">The Price Is</span><span class="l-fright">Fright</span><span class="l-avoya">Avoya Marketing</span></div>
         <p>Start a room, open the big screen, and drop the join link in the Teams chat. Everyone guesses on their phone or laptop.</p>
-        <div class="btns"><button class="btn big" id="hnewg" type="button">New game</button>${last ? `<button class="btn ghost big" id="hres" type="button">Resume room ${esc(last)}</button>` : ''}</div>
+        <div class="btns"><button class="btn big" id="hnewg" type="button">New game</button><button class="btn slime big" id="hnewa" type="button">New play-anytime game</button>${last ? `<button class="btn ghost big" id="hres" type="button">Resume room ${esc(last)}</button>` : ''}</div>
+        <p class="h-anyline">Play-anytime: one link for a chat, everyone plays all 20 items on their own phone whenever they like, and you close it when it's time.</p>
         <div class="h-mode">${modeLine()}</div></div>
+      <section class="panel h-setup" id="hsetup" hidden></section>
+      ${recent.length ? `<section class="panel h-recent"><h3>Recent rooms</h3><div class="hr-list">${recent.map(r => `<button type="button" class="hr-row" data-room="${esc(r.c)}"><span class="code">${esc(r.c)}</span><span class="k">${r.kind === 'async' ? 'Play-anytime' : 'Live game'}</span><span class="s" data-rs="${esc(r.c)}"></span><span class="when">${esc(fmtWhen(r.at))}</span></button>`).join('')}</div></section>` : ''}
       <details class="panel h-fold" id="fsheet0" open><summary><span class="t">Check prices before the meeting</span><span class="d">Edits save for every game</span></summary><div class="rs" id="hsheet"></div>
         <p class="h-tip">Items flagged <span class="flag">Recheck</span> use live prices. Check them the week of the meeting and type the new number here.</p>${poolBlock()}</details>
     </div></div>`;
     sheetMode = 'edit'; buildSheet(); buildPool();
     $('#hnewg').onclick = createRoom;
+    $('#hnewa').onclick = showAsyncSetup;
     const r = $('#hres'); if (r) r.onclick = () => go(last);
+    $$('.hr-row', app).forEach(b => { b.onclick = () => go(b.dataset.room); });
+    // each recent room's status (a play-anytime game: open or closed; a room that's gone drops off the list)
+    recent.forEach(async x => {
+      let m = null; try { m = await getWithin(roomPath(x.c) + '/meta', 8000); } catch (e) { return; }
+      const cell = $(`[data-rs="${x.c}"]`, app); if (!cell) return;
+      if (!m) { cell.closest('.hr-row').remove(); recentDrop(x.c); return; }
+      cell.innerHTML = m.mode === 'async' ? (m.status === 'closed' ? '<span class="chip">Closed</span>' : '<span class="chip green">Open</span>') : '';
+    });
   }
-  function go(c) { try { history.replaceState(null, '', hostUrl(c)); } catch (e) { /* ignore */ } openRoom(c); }
+  // Rooms this console has opened, newest first (so a live meeting room and a week-long play-anytime game are both easy to reach).
+  function recentRooms() { try { const v = JSON.parse(KV.get('tpif:host:recent') || '[]'); return Array.isArray(v) ? v.filter(x => x && /^[A-Z]{4}$/.test(x.c)).slice(0, 6) : []; } catch (e) { return []; } }
+  function recentAdd(c, kind) { const l = recentRooms().filter(x => x.c !== c); l.unshift({ c, kind, at: Date.now() }); KV.set('tpif:host:recent', JSON.stringify(l.slice(0, 6))); }
+  function recentDrop(c) { KV.set('tpif:host:recent', JSON.stringify(recentRooms().filter(x => x.c !== c))); }
+  function go(c, key) {
+    const k = key || KV.get('tpif:host:key:' + c) || '';
+    try { history.replaceState(null, '', hostUrl(c) + (k ? '&key=' + encodeURIComponent(k) : '')); } catch (e) { /* ignore */ }
+    route(c);
+  }
+  // A play-anytime room gets its own console; anything else, the live one.
+  async function route(c) {
+    let m = null;
+    try { m = await getWithin(roomPath(c) + '/meta', 4000); } catch (e) { /* openRoom says what's wrong (and switches over if it turns out to be one) */ }
+    if (m && m.mode === 'async') openAsyncRoom(c); else openRoom(c);
+  }
 
   async function createRoom() {
     const b = $('#hnewg'); if (b) { b.disabled = true; b.textContent = 'Creating…'; }
@@ -4805,7 +6029,7 @@ function HostApp(code) {
       let c = roomCode();
       for (let k = 0; k < 8; k++) {
         const m = await getWithin(roomPath(c) + '/meta');
-        if (!m || (typeof m.created === 'number' && store.serverNow() - m.created > 12 * 3600e3)) break;
+        if (codeFree(m)) break;
         c = roomCode();
       }
       const key = rid(8).slice(1);
@@ -4815,7 +6039,7 @@ function HostApp(code) {
         settings: { timer: GAME.clockSeconds, autoStart: GAME.autoStartClock, autoEnd: GAME.autoEndWhenAllIn }
       });
       if (!ok) throw new Error('write failed');
-      KV.set('tpif:host:last', c);
+      KV.set('tpif:host:last', c); recentAdd(c, 'live');
       go(c);
     } catch (e) {
       console.error(e);
@@ -4880,9 +6104,361 @@ function HostApp(code) {
         $('#hfresh').onclick = () => { try { history.replaceState(null, '', pageUrl() + '?role=host'); } catch (e) { /* ignore */ } code = ''; startScreen(); };
         return;
       }
+      if (isAsync(r)) { openAsyncRoom(c); return; }   // a play-anytime game has a console of its own
       seen = true; paintAll();
     });
     roomTimer = setInterval(() => { if (room && room.meta) { ctl.autoEnd(); paintNow(); } }, 250);
+  }
+
+  /* ============================== PLAY-ANYTIME: the host's side ==============================
+     Create the game (one setup card), share it (QR, link, ready-made texts for the chat), watch the progress board,
+     close it (the console tallies the board from the raw guesses), and post the results. The console is the only
+     screen of a play-anytime game that holds a live connection. */
+  let aSecs = GAME.asyncClockSeconds;
+  function showAsyncSetup() {
+    const box = $('#hsetup'); if (!box) return;
+    const n = asyncBankIds(pool).length;
+    box.hidden = false;
+    box.innerHTML = `<h2 class="hs-t">New play-anytime game</h2>
+      <p class="hs-lede">Everyone plays all ${n} items on their own phone, whenever they like. You share one link, keep an eye on who's played, and close the game when it's time. The results go to the same chat.</p>
+      <div class="set-row"><div class="sl">Items<small>The meeting's 10, then the encore's 10 (in the Encore pool's order). Prices are copied from Items &amp; prices now, and can be fixed in the game's console later.</small></div><span class="chip green hs-bank">${ICON.check} Live 10 + Encore 10 · ${n} items</span></div>
+      <div class="set-row"><div class="sl">Guess clock<small>Each item's own clock starts when the player opens it, so guesses stay gut guesses</small></div><div class="seg" role="group" aria-label="Guess clock" id="hsclock">${GAME.asyncClockChoices.map(v => `<button type="button" data-secs="${v}" class="${v === aSecs ? 'on' : ''}" aria-pressed="${v === aSecs}">${v ? v + 's' : 'No timer'}</button>`).join('')}</div></div>
+      <div class="set-row"><div class="sl">Close time <span class="faint">(optional)</span><small>Shown to players as “Results drop Friday at 3 PM”, in their own time zone. You can set or change it later.</small></div><div class="hs-close"><input type="datetime-local" id="hsat" class="hs-dt" aria-label="Close time, Eastern"><span class="faint">Eastern</span></div></div>
+      <div class="h-actions"><button class="btn slime big block" type="button" id="hscreate">Create the game</button><div class="sub"><span class="hint">You'll get the link and QR code next.</span><button class="btn ghost small" type="button" id="hscancel">Cancel</button></div></div>`;
+    $('#hsclock').onclick = e => { const b = e.target.closest('[data-secs]'); if (!b) return; aSecs = +b.dataset.secs; $$('[data-secs]', box).forEach(x => { const on = +x.dataset.secs === aSecs; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); }); };
+    $('#hscancel').onclick = () => { box.hidden = true; box.innerHTML = ''; };
+    $('#hscreate').onclick = createAsyncRoom;
+    try { box.scrollIntoView({ block: 'start', behavior: 'smooth' }); } catch (e) { /* ignore */ }
+  }
+  async function createAsyncRoom() {
+    const b = $('#hscreate'), at = $('#hsat') ? $('#hsat').value : '';
+    const closeAt = at ? zonedToEpoch(at) : null;
+    if (at && !(closeAt > clockNow())) { toast('Pick a close time in the future, or leave it empty.'); return; }
+    if (b) { b.disabled = true; b.textContent = 'Creating…'; }
+    try {
+      let c = roomCode();
+      for (let k = 0; k < 8; k++) { const m = await getWithin(roomPath(c) + '/meta'); if (codeFree(m)) break; c = roomCode(); }
+      const key = rid(8).slice(1), ids = asyncBankIds(pool);
+      const ok = await store.set(roomPath(c), {
+        meta: { created: store.TS, key, v: 1, mode: 'async', status: 'open', closeAt: closeAt || null },
+        state: { phase: 'lobby', index: -1 },
+        async: { list: ids, prices: asyncPriceSnapshot(ids, overrides), settings: { secs: aSecs, bonus: true, lightning: GAME.lightning !== false, hand: !!GAME.skeletonHand }, bank: 'live+encore' }
+      });
+      if (!ok) throw new Error('write failed');
+      KV.set('tpif:host:key:' + c, key); KV.set('tpif:host:last', c); recentAdd(c, 'async');
+      go(c, key);
+    } catch (e) {
+      console.error(e);
+      toast(e && e.timeout ? "Couldn't reach the database. Check the internet connection." : "Couldn't create the game. Check the connection and Firebase rules.");
+      if (b) { b.disabled = false; b.textContent = 'Create the game'; }
+    }
+  }
+
+  function openAsyncRoom(c) {
+    leaveRoom();
+    code = c; ctl = null; sheetMode = 'async';
+    KV.set('tpif:host:last', c);
+    let A2 = { filter: 'all', q: '', armed: '', armT: 0, kick: '', kickT: 0, tallying: false, autoClosedAt: 0, sig: {} };
+    app.innerHTML = `<div class="h-wrap"><div class="panel h-hero" style="max-width:640px;margin:10vh auto 0"><p class="muted">Opening game ${esc(c)}…</p></div></div>`;
+    let built = false;
+    unsubRoom = store.on(roomPath(c), r => {
+      room = r;
+      if (!r || !r.meta) {
+        app.innerHTML = `<div class="h-wrap"><div class="panel h-hero" style="max-width:640px;margin:10vh auto 0"><p class="h-lobbyline">Game <b>${esc(c)}</b> doesn't exist${built ? ' anymore' : ''}.</p><div class="h-actions"><button class="btn big block" type="button" id="hfresh">Back to the start</button></div></div></div>`;
+        $('#hfresh').onclick = () => { try { history.replaceState(null, '', pageUrl() + '?role=host'); } catch (e) { /* ignore */ } code = ''; startScreen(); };
+        built = false; return;
+      }
+      if (!isAsync(r)) { openRoom(c); return; }
+      // The key latch: the console for a play-anytime game lists every price, so it opens only from the host's own link.
+      const k = new URLSearchParams(location.search).get('key') || KV.get('tpif:host:key:' + c) || '';
+      if (k !== r.meta.key) {
+        app.innerHTML = `<div class="h-wrap"><div class="panel h-hero" style="max-width:640px;margin:10vh auto 0"><div class="logo"><span class="l-top">The Price Is</span><span class="l-fright">Fright</span><span class="l-avoya">Avoya Marketing</span></div>
+          <p>Game <b>${esc(c)}</b> is a play-anytime game. Its console opens from the host link it was created with (the address ends in <b>&amp;key=…</b>), or on the computer that created it.</p>
+          <div class="btns"><a class="btn ghost" href="${esc(joinUrl(c))}">Play it instead</a><button class="btn ghost" type="button" id="hfresh">Back to the start</button></div></div></div>`;
+        $('#hfresh').onclick = () => { try { history.replaceState(null, '', pageUrl() + '?role=host'); } catch (e) { /* ignore */ } code = ''; startScreen(); };
+        built = false; return;
+      }
+      KV.set('tpif:host:key:' + c, k); recentAdd(c, 'async');
+      if (!built) { buildAsync(); built = true; paintAsync(); return; }
+      schedulePaint();
+    });
+    // A busy game sends an update for every guess: redraw at most a few times a second.
+    let paintT = 0, paintedAt = 0;
+    function schedulePaint() {
+      if (paintT) return;
+      const wait = Math.max(0, 350 - (Date.now() - paintedAt));
+      paintT = setTimeout(() => { paintT = 0; paintedAt = Date.now(); if (room && room.meta && $('#haboard')) paintAsync(); }, wait);
+    }
+    roomTimer = setInterval(() => { if (room && room.meta && built) { autoClose(); paintClose(); paintBoardTimes(); } }, 1000);
+
+    function buildAsync() {
+      const url = shareJoinUrl(c), n = asyncItems(room).length;
+      app.innerHTML = `<div class="h-wrap h-async">
+        <div class="h-top">${brand}
+          <div class="h-room"><span class="lab">Play-anytime</span><span class="code">${esc(c)}</span><span class="chip ${store.mode === 'firebase' ? 'green' : 'gold'}">${store.mode === 'firebase' ? 'Live' : 'Demo mode'}</span></div>
+          <div class="h-links"><span class="chip" id="hasince"></span><button class="btn ghost small" id="hajoin" type="button">Copy join link</button></div>
+        </div>
+        <div class="h-main">
+          <div class="ha-col">
+            <section class="panel ha-share"><div class="ha-qr" id="haqr">${QR.svg(url)}</div>
+              <div class="ha-sh"><div class="lab" id="halab">Share it in the chat</div><div class="ha-url">${urlBreaks(prettyUrl() + '/?room=' + c)}</div>
+                <div class="ha-btns"><button class="btn small" type="button" id="hainv">Copy invite (Teams or Slack)</button><button class="btn ghost small" type="button" id="hainv2">Copy short invite (texts)</button>
+                  <button class="btn ghost small" type="button" id="hapng">Download QR (PNG)</button><button class="btn ghost small" type="button" id="hascr">Open the invite screen</button></div>
+                <pre class="ha-prev" id="haprev"></pre></div></section>
+            <section class="panel h-step ha-close" id="haclose"></section>
+          </div>
+          <aside class="panel h-side ha-board" id="haboard"></aside>
+        </div>
+        <div class="h-folds">
+          <details class="panel h-fold" id="fasheet"><summary><span class="t">Items &amp; prices</span><span class="d">This game's own ${n} prices, reveal lines and fine print</span></summary><div class="rs" id="hasheet"></div>
+            <p class="h-tip">This game keeps its own copy of the prices, taken when it was created: a fix here re-scores this game only (and, once it's closed, counts the board again).</p></details>
+          <details class="panel h-fold" id="faset"><summary><span class="t">Settings</span><span class="d">Guess clock, close time, closest-guess bonus, lightning, skeleton cursor, delete</span></summary><div id="haset"></div></details>
+          <details class="panel h-fold" id="fahow"><summary><span class="t">How to run it</span><span class="d">Five steps</span></summary>
+            <div class="h-how">
+              <p><b>1.</b> Copy the invite (or the QR code) into Teams, Slack or a text group. Everyone plays on their own phone or laptop, whenever they like: all ${n} items, about ten minutes.</p>
+              <p><b>2.</b> Watch the board here now and then. <b>Copy a reminder</b> nudges the people who haven't finished.</p>
+              <p><b>3.</b> When it's time, <b>close the game</b>. The console counts the board from everyone's guesses, closest-guess bonuses and all. (With a close time set, the game closes itself then if this console is open; if it isn't, guessing stops at that time and the board is counted the next time you open it.)</p>
+              <p><b>4.</b> Paste the <b>results announcement</b> in the same chat. Everyone's link now opens on their own place, the podium and the board.</p>
+              <p><b>5.</b> Optional: <b>Open the results screen</b> to share the podium in a meeting. Closed by mistake? <b>Reopen</b> it.</p>
+              <p class="faint">Nothing on this console needs to stay open in between. Keep its address to yourself: it shows the answers.</p>
+            </div></details>
+        </div></div>`;
+      $$('.h-fold', app).forEach(d => { d.open = KV.get('tpif:host:fold:' + d.id) === '1'; d.addEventListener('toggle', () => KV.set('tpif:host:fold:' + d.id, d.open ? '1' : '0')); });
+      const copy = async (text, ok) => toast(await copyText(text) ? ok : text);
+      $('#hajoin').onclick = () => copy(url, 'Join link copied.');
+      $('#hainv').onclick = () => copy(inviteText(c, room.meta, asyncItems(room).length, false), 'Invite copied. Paste it in Teams or Slack.');
+      $('#hainv2').onclick = () => copy(inviteText(c, room.meta, asyncItems(room).length, true), 'Short invite copied. Paste it in a text.');
+      $('#hapng').onclick = () => { try { const a = document.createElement('a'); a.href = QR.png(url, 1024); a.download = `price-is-fright-${c}.png`; document.body.appendChild(a); a.click(); a.remove(); } catch (e) { toast("Couldn't make the picture in this browser."); } };
+      $('#hascr').onclick = () => { const w = window.open(displayUrl(c), 'tpif-display-' + c, 'popup=yes,width=1600,height=900'); if (!w) toast('Pop-up blocked. Allow pop-ups for this page.'); };
+      $('#haboard').addEventListener('click', onBoardClick);
+      $('#haboard').addEventListener('input', e => { if (e.target.id === 'haq') { A2.q = e.target.value.trim().toLowerCase(); paintBoard(true); } });
+      $('#haclose').addEventListener('click', onCloseClick);
+      $('#haset').addEventListener('click', onASetClick);
+      $('#haset').addEventListener('change', onASetChange);
+      buildASheet();
+    }
+
+    function paintAsync() { paintHead(); paintBoard(); paintClose(); paintASettings(); paintASheet(); }
+    function paintHead() {
+      const m = room.meta, el = $('#hasince'); if (!el) return;
+      el.className = 'chip' + (m.status === 'closed' ? '' : ' green');
+      el.textContent = m.status === 'closed' ? 'Closed ' + (m.closedAt ? fmtWhen(m.closedAt) : '') : 'Open since ' + (m.created ? fmtWhen(m.created) : '…');
+      const prev = $('#haprev'); if (prev) { const t = inviteText(c, m, asyncItems(room).length, false); if (prev.textContent !== t) prev.textContent = t; }
+      const closed = m.status === 'closed', sh = $('.ha-share');
+      if (sh) sh.classList.toggle('closed', closed);
+      const lab = $('#halab'); if (lab) lab.textContent = closed ? 'The link now opens everyone\'s results' : 'Share it in the chat';
+      const scr = $('#hascr'); if (scr) scr.textContent = closed ? 'Open the results screen' : 'Open the invite screen';
+    }
+
+    /* ---------- the progress board ---------- */
+    function rowsOf() {
+      const N = asyncItems(room).length, gs = room.guesses || {};
+      return namedPlayers(room).map(([pid, p]) => {
+        let n = 0; for (let k = 0; k < N; k++) if (gs[k] && gs[k][pid]) n++;
+        const started = typeof p.i === 'number' || !!p.shownAt;
+        const at = Math.max(+p.at || 0, +p.joined || 0);
+        return { pid, name: p.name, done: !!p.done, started, i: typeof p.i === 'number' ? p.i : -1, n, total: +p.total || 0, at, kind: p.done ? 'done' : started ? 'playing' : 'joined' };
+      }).sort((a, b) => (b.done - a.done) || (a.done ? b.total - a.total : (b.i - a.i) || (b.started - a.started)) || a.name.localeCompare(b.name));
+    }
+    function paintBoard(force) {
+      const box = $('#haboard'); if (!box) return;
+      const N = asyncItems(room).length, closed = room.meta.status === 'closed', fin = closed ? (room.async && room.async.final) : null;
+      const rows = rowsOf(), fp = fin && fin.players ? fin.players : null;
+      if (fp) rows.sort((a, b) => ((fp[a.pid] ? fp[a.pid].rank : 1e9) - (fp[b.pid] ? fp[b.pid].rank : 1e9)) || a.name.localeCompare(b.name));
+      const nDone = rows.filter(r => r.done).length, nPlay = rows.filter(r => r.kind === 'playing').length;
+      const show = rows.filter(r => (A2.filter === 'all' || A2.filter === r.kind || (A2.filter === 'playing' && r.kind === 'joined')) && (!A2.q || r.name.toLowerCase().includes(A2.q)));
+      const finalOf = pid => fin && fin.players && fin.players[pid];
+      const row = r => {
+        const played = r.done ? N : Math.min(N, Math.max(0, r.i, r.n));   // items finished (the one they're on counts once it's guessed)
+        const prog = r.done ? '<span class="ha-done">Done</span>' : r.started ? `<span class="ha-bar" title="${played} of ${N} played"><i style="width:${(played / N * 100).toFixed(1)}%"></i></span><span class="ha-of">${played}/${N}</span>` : '<span class="ha-of ha-new">Just joined</span>';
+        const fe = finalOf(r.pid), score = fe ? `<em>${ordinal(fe.rank)}</em>${fmtPts(fe.total)}` : r.started ? fmtPts(r.total) : '';
+        const pm = r.done ? 'Done' : r.started ? `${played}/${N}` : 'Just joined';   // (on a phone the progress sits under the name)
+        return `<div class="ha-r ${r.kind}"><div class="ha-nm"><span class="n3">${esc(r.name)}</span><span class="ha-sub"><small class="ha-pm${r.done ? ' done' : ''}">${pm}</small><small class="ha-t" data-at="${r.at}">${r.at ? esc(agoText(r.at)) : ''}</small></span></div><span class="ha-p">${prog}</span><span class="s3">${score}</span>
+          <button class="x${A2.kick === r.pid ? ' arm' : ''}" type="button" data-kick="${r.pid}" title="Remove ${esc(r.name)}" aria-label="Remove ${esc(r.name)}">${A2.kick === r.pid ? 'Remove?' : '×'}</button></div>`;
+      };
+      const sig = JSON.stringify([rows.map(r => [r.pid, r.name, r.kind, r.i, r.n, r.total, r.at]), A2.filter, A2.q, A2.kick, closed, !!fin, room.meta.talliedAt]);
+      if (!force && sig === A2.sig.board) return;
+      A2.sig.board = sig;
+      if (!$('.ha-list', box)) {
+        box.innerHTML = `<div class="h-side-top"><h3>Players <b data-n></b></h3></div><div class="ha-chips"></div>
+          <div class="ha-tools"><div class="seg" role="group" aria-label="Show">${[['all', 'All'], ['playing', 'Playing'], ['done', 'Done']].map(([k, l]) => `<button type="button" data-filter="${k}">${l}</button>`).join('')}</div>
+            <input type="search" id="haq" class="ha-q" placeholder="Find a name" aria-label="Find a player"></div>
+          <div class="pl-list ha-list"></div>`;
+      }
+      $('[data-n]', box).textContent = rows.length;
+      $('.ha-chips', box).innerHTML = fin && fin.info
+        ? `<span class="chip green">${fin.info.count} on the board</span><span class="chip">${nDone} finished</span>${nPlay ? `<span class="chip gold">${nPlay} didn't finish</span>` : ''}`
+        : `<span class="chip">${rows.length} joined</span><span class="chip green">${nDone} finished</span><span class="chip gold">${nPlay} playing</span>`;
+      $$('[data-filter]', box).forEach(b => { const on = b.dataset.filter === A2.filter; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+      const l2 = $('.ha-list', box), scroll = l2.scrollTop;
+      l2.classList.toggle('final', !!(fin && fin.info));
+      l2.innerHTML = show.length ? show.map(row).join('') : `<div class="pl-empty">${rows.length ? 'Nobody matches.' : 'Nobody yet. Paste the invite in the chat.'}</div>`;
+      l2.scrollTop = scroll;
+    }
+    function paintBoardTimes() { $$('#haboard [data-at]').forEach(n => { const t = +n.dataset.at; const s = t ? agoText(t) : ''; if (n.textContent !== s) n.textContent = s; }); }
+    function onBoardClick(e) {
+      const f = e.target.closest('[data-filter]'); if (f) { A2.filter = f.dataset.filter; paintBoard(true); return; }
+      const b = e.target.closest('[data-kick]'); if (!b) return;
+      const pid = b.dataset.kick;
+      if (A2.kick !== pid) { A2.kick = pid; clearTimeout(A2.kickT); A2.kickT = setTimeout(() => { A2.kick = ''; paintBoard(true); }, 3000); paintBoard(true); return; }
+      A2.kick = ''; clearTimeout(A2.kickT);
+      const up = { ['players/' + pid]: null };
+      for (let i = 0; i < asyncItems(room).length; i++) up[`guesses/${i}/${pid}`] = null;
+      store.update(roomPath(c), up).then(ok => { if (ok && room.meta.status === 'closed') closeGame('removed'); });
+    }
+
+    /* ---------- the close ---------- */
+    function arm(what) { A2.armed = what; clearTimeout(A2.armT); A2.armT = setTimeout(() => { A2.armed = ''; A2.sig.close = ''; paintClose(); paintASettings(true); }, 4000); A2.sig.close = ''; paintClose(); paintASettings(true); }
+    function paintClose() {
+      const box = $('#haclose'); if (!box || !room || !room.meta) return;
+      const m = room.meta, closed = m.status === 'closed', rows = rowsOf(), playing = rows.filter(r => r.kind === 'playing').length, left = rows.filter(r => !r.done).length;
+      const fin = room.async && room.async.final, closing = !closed && m.closeAt && clockNow() >= m.closeAt;
+      const sig = JSON.stringify([m.status, m.closeAt, m.closedAt, playing, left, A2.armed, !!fin, fin && fin.info && fin.info.count, A2.tallying, closing, fin && fin.board && fin.board.map(e => e.name + e.total)]);
+      if (sig === A2.sig.close) return; A2.sig.close = sig;
+      if (!closed) {
+        const armedC = A2.armed === 'close';
+        box.innerHTML = `<div class="st-top"><div class="st-where"><span class="w">Open</span>${closing ? '<span class="ph hot">Past the close time</span>' : '<span class="ph go">Taking guesses</span>'}</div></div>
+          <p class="ha-when">${m.closeAt ? `${closing ? 'Was due to close' : 'Closes'} <b>${esc(fmtWhen(m.closeAt))}</b>${closing ? '. Guessing has stopped on players\' phones: close it to count the board.' : '. It closes itself then if this console is open.'}` : 'No close time set. Close it whenever everyone\'s had a go (or set a time under Settings).'}</p>
+          <div class="h-actions"><button class="btn ${armedC ? 'danger' : ''} big block" type="button" data-act="close"${A2.tallying ? ' disabled' : ''}>${A2.tallying ? 'Counting the board…' : armedC ? (playing ? `Click again to close · ${playing} ${playing === 1 ? 'person is' : 'people are'} still playing` : 'Click again to close and reveal the results') : 'Close the game and reveal results'}</button>
+            <div class="sub"><span class="hint">${left ? `${left} of ${rows.length} haven't finished` : rows.length ? 'Everyone who joined has finished' : 'Nobody has joined yet'}</span><button class="btn ghost small" type="button" data-act="remind">Copy a reminder</button></div></div>`;
+        return;
+      }
+      const board = (fin && fin.board ? ents(fin.board).map(([, e]) => e) : []), count = fin && fin.info ? fin.info.count : 0;
+      box.innerHTML = `<div class="st-top"><div class="st-where"><span class="w">Closed</span><span class="ph">${m.closedAt ? esc(fmtWhen(m.closedAt)) : ''} · ${count} played</span></div></div>
+        <div class="h-say ha-top3"><div class="lab">Top three</div>${board.filter(e => e.rank <= 3).map(e => `<div class="co2"><b>${ordinal(e.rank)}</b><span><b>${esc(e.name)}</b> <span class="faint">· ${fmtPts(e.total)} pts</span></span></div>`).join('') || '<p class="faint">Nobody played.</p>'}</div>
+        <div class="h-actions"><button class="btn slime big block" type="button" data-act="announce">Copy results announcement</button>
+          <div class="sub"><span class="hint">Paste it in the same chat as the invite</span><button class="btn ghost small" type="button" data-act="screen">Open the results screen</button>
+          <button class="btn ${A2.armed === 'reopen' ? 'danger' : 'ghost'} small" type="button" data-act="reopen">${A2.armed === 'reopen' ? 'Click again to reopen' : 'Reopen'}</button></div></div>
+        <pre class="ha-prev">${esc(announceText(c, board))}</pre>`;
+    }
+    async function onCloseClick(e) {
+      const b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
+      const act = b.dataset.act;
+      if (act === 'remind') { const left = rowsOf().filter(r => !r.done).length; toast(await copyText(reminderText(c, room.meta, left)) ? 'Reminder copied. Paste it in the chat.' : reminderText(c, room.meta, left)); return; }
+      if (act === 'announce') { const t = announceText(c, ents(room.async && room.async.final && room.async.final.board).map(([, x]) => x)); toast(await copyText(t) ? 'Announcement copied. Paste it in the chat.' : t); return; }
+      if (act === 'screen') { const w = window.open(displayUrl(c), 'tpif-display-' + c, 'popup=yes,width=1600,height=900'); if (!w) toast('Pop-up blocked. Allow pop-ups for this page.'); return; }
+      if (act === 'close' || act === 'reopen') {
+        if (A2.armed !== act) { arm(act); return; }
+        A2.armed = ''; clearTimeout(A2.armT);
+        if (act === 'close') await closeGame(); else await reopenGame();
+      }
+    }
+    // The tally: every item scored from the raw guesses, everyone ranked, the result written down for the player pages.
+    // why = '' (the close itself), or a re-count after it: 'price' (a fixed price), 'removed' (a player taken off), 'bonus'.
+    async function closeGame(why) {
+      if (A2.tallying) { if (why) A2.again = why; return; }
+      A2.tallying = true; A2.sig.close = ''; paintClose();
+      try {
+        const fresh = await getWithin(roomPath(c));   // the very latest guesses
+        const r = fresh && fresh.meta ? fresh : room;
+        if (why && r.meta.status !== 'closed') { A2.tallying = false; A2.sig.close = ''; paintClose(); return; }   // (reopened meanwhile)
+        const { results, final } = asyncTally(r);
+        const was = r.async && r.async.final && r.async.final.info;
+        if (why === 'price' || (why && was && was.corrected)) final.info.corrected = true;
+        const up = { results, 'async/final': final, 'meta/status': 'closed', 'meta/talliedAt': store.TS };
+        if (!why) up['meta/closedAt'] = store.TS;
+        const ok = await store.update(roomPath(c), up);
+        toast(!ok ? "Couldn't count the board. Check the connection and try again."
+          : why === 'price' ? 'Counted the board again with the new price.' : why === 'removed' ? 'Counted the board again without them.'
+          : why === 'bonus' ? 'Counted the board again with the new bonus setting.' : 'Closed. Copy the results announcement into the chat.');
+      } catch (e) { console.error(e); toast("Couldn't count the board. Check the connection and try again."); }
+      A2.tallying = false; A2.sig.close = ''; paintClose();
+      if (A2.again) { const w = A2.again; A2.again = ''; closeGame(w); }
+    }
+    async function reopenGame() {
+      const past = room.meta.closeAt && clockNow() >= room.meta.closeAt;
+      const up = { 'meta/status': 'open', 'meta/closedAt': null, 'async/final': null, results: null };
+      if (past) up['meta/closeAt'] = null;
+      A2.autoClosedAt = 0;
+      const ok = await store.update(roomPath(c), up);
+      if (ok) toast('Reopened: players are back where they were.' + (past ? ' Its close time had passed, so it was cleared: set a new one under Settings.' : ''));
+    }
+    // A close time, with this console open: it closes itself then.
+    function autoClose() {
+      const m = room.meta;
+      if (m.status === 'closed' || !m.closeAt || clockNow() < m.closeAt || A2.tallying || A2.autoClosedAt === m.closeAt) return;
+      A2.autoClosedAt = m.closeAt; closeGame();
+    }
+
+    /* ---------- settings ---------- */
+    function paintASettings(force) {
+      const box = $('#haset'); if (!box || !room) return;
+      const s = asyncSettingsOf(room), m = room.meta, sig = JSON.stringify([s, m.closeAt, A2.armed]);
+      if (!force && sig === A2.sig.set) return; A2.sig.set = sig;
+      box.innerHTML = `<div class="set-row"><div class="sl">Guess clock<small>Each item's own clock. A change applies the next time a player opens the game.</small></div><div class="seg" role="group" aria-label="Guess clock">${GAME.asyncClockChoices.map(v => `<button type="button" data-asecs="${v}" class="${v === s.secs ? 'on' : ''}" aria-pressed="${v === s.secs}">${v ? v + 's' : 'No timer'}</button>`).join('')}</div></div>
+        <div class="set-row"><div class="sl">Close time<small>${m.closeAt ? `Now ${esc(fmtWhen(m.closeAt))} (your time)` : 'None set'}. Entered in Eastern time; players see it in their own.</small></div><div class="hs-close"><input type="datetime-local" id="haat" class="hs-dt" value="${m.closeAt ? epochToZoned(m.closeAt) : ''}" aria-label="Close time, Eastern"><button class="btn ghost small" type="button" data-aclose="set">Set</button>${m.closeAt ? '<button class="btn ghost small" type="button" data-aclose="clear">Clear</button>' : ''}</div></div>
+        <div class="set-row"><div class="sl">Closest-guess bonus<small>${fmtPts(GAME.closestBonus)} points for the closest guess on each item (ties share it), added when the game closes</small></div><label class="sw"><input type="checkbox" data-aset="bonus"${s.bonus ? ' checked' : ''} aria-label="Closest-guess bonus"><span></span></label></div>
+        <div class="set-row"><div class="sl">Lightning<small>At the final item and the results</small></div><label class="sw"><input type="checkbox" data-aset="lightning"${s.lightning ? ' checked' : ''} aria-label="Lightning"><span></span></label></div>
+        <div class="set-row"><div class="sl">Skeleton cursor on the reveal<small>A bony hand clicks each digit of the price as it locks</small></div><label class="sw"><input type="checkbox" data-aset="hand"${s.hand ? ' checked' : ''} aria-label="Skeleton cursor"><span></span></label></div>
+        <div class="danger-row"><span class="faint">When it's all over</span><button class="btn ${A2.armed === 'delete' ? 'danger' : 'ghost'} small" type="button" data-adel>${A2.armed === 'delete' ? 'Click again: this deletes the game and everyone\'s guesses' : 'Delete this game'}</button>
+          <button class="btn ghost small" type="button" data-anew>Start something else</button></div>`;
+    }
+    async function onASetClick(e) {
+      const t = e.target.closest('[data-asecs]'); if (t) { store.set(roomPath(c) + '/async/settings/secs', +t.dataset.asecs); return; }
+      const cl = e.target.closest('[data-aclose]');
+      if (cl) {
+        if (cl.dataset.aclose === 'clear') { store.set(roomPath(c) + '/meta/closeAt', null); A2.autoClosedAt = 0; toast('Close time cleared.'); return; }
+        const v = $('#haat').value, at = zonedToEpoch(v);
+        if (!(at > clockNow())) { toast('Pick a close time in the future.'); return; }
+        store.set(roomPath(c) + '/meta/closeAt', at); A2.autoClosedAt = 0; toast('Close time set: ' + fmtWhen(at, GAME.timeZone) + ' ET'); return;
+      }
+      if (e.target.closest('[data-anew]')) { try { history.replaceState(null, '', pageUrl() + '?role=host'); } catch (err) { /* ignore */ } code = ''; startScreen(); return; }
+      if (e.target.closest('[data-adel]')) {
+        if (A2.armed !== 'delete') { arm('delete'); return; }
+        A2.armed = '';
+        const ok = await store.remove(roomPath(c));
+        if (ok) { recentDrop(c); KV.del('tpif:host:key:' + c); if (KV.get('tpif:host:last') === c) KV.del('tpif:host:last'); toast(`Game ${c} deleted.`); try { history.replaceState(null, '', pageUrl() + '?role=host'); } catch (err) { /* ignore */ } code = ''; startScreen(); }
+      }
+    }
+    function onASetChange(e) {
+      const x = e.target.closest('[data-aset]'); if (!x) return;
+      store.set(roomPath(c) + '/async/settings/' + x.dataset.aset, !!x.checked).then(ok => { if (ok && x.dataset.aset === 'bonus' && room.meta.status === 'closed') closeGame('bonus'); });
+    }
+
+    /* ---------- this game's prices ---------- */
+    function buildASheet() {
+      const box = $('#hasheet'); if (!box) return;
+      box.innerHTML = asyncItems(room).map((it, i) => `<div class="rs-row" data-aid="${it.id}">
+        <div class="rs-main"><div class="rs-n">${i + 1}</div>
+          <div class="rs-name"><span class="t2">${esc(it.name)}</span><span class="m2"><span>${esc(TYPE_LABEL[it.type])}</span>${it.double ? '<span class="flag dbl">2× points</span>' : ''}<span class="flag edited" data-ed hidden>Edited</span><button class="rs-toggle" type="button" data-more>Details</button></span></div>
+          <label class="pin"><span>$</span><input type="text" inputmode="decimal" data-price aria-label="Answer for item ${i + 1}"></label><div class="rs-st"></div></div>
+        <div class="rs-more" hidden>
+          <label>Reveal line (shown on the phones after the price)<textarea rows="2" data-reveal></textarea></label>
+          <label>Fine print under the price<input type="text" data-fine></label>
+          <div class="acts"><span class="p-small">Original answer: ${fmtMoney(it.price)}</span></div></div></div>`).join('');
+      box.addEventListener('change', onASheetChange);
+      box.addEventListener('click', e => { const m = e.target.closest('[data-more]'); if (!m) return; const more = $('.rs-more', m.closest('.rs-row')); more.hidden = !more.hidden; m.textContent = more.hidden ? 'Details' : 'Hide details'; });
+      box.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches('[data-price], [data-fine]')) e.target.blur(); });
+      paintASheet();
+    }
+    function paintASheet() {
+      const box = $('#hasheet'); if (!box || !room) return;
+      const P = asyncPricesOf(room);
+      $$('.rs-row', box).forEach(row => {
+        const id = +row.dataset.aid, it = ITEM_BY_ID[id], v = viewOf(it, P);
+        const pi = $('[data-price]', row), rv = $('[data-reveal]', row), fi = $('[data-fine]', row);
+        if (document.activeElement !== pi) pi.value = Number(v.price).toLocaleString('en-US', { maximumFractionDigits: 2 });
+        if (document.activeElement !== rv) rv.value = v.reveal;
+        if (document.activeElement !== fi) fi.value = v.fine;
+        $('[data-ed]', row).hidden = !v.edited;
+      });
+    }
+    async function onASheetChange(e) {
+      const row = e.target.closest('.rs-row'); if (!row) return;
+      const id = +row.dataset.aid, path = roomPath(c) + '/async/prices/' + id + '/';
+      let ok;
+      if (e.target.matches('[data-price]')) {
+        const v = parseGuess(e.target.value);
+        if (!(v > 0)) { toast("That price didn't read as a number. Try something like 34.99"); paintASheet(); return; }
+        ok = await store.set(path + 'price', v);
+      } else if (e.target.matches('[data-reveal]')) ok = await store.set(path + 'reveal', e.target.value.trim() || ITEM_BY_ID[id].reveal);
+      else if (e.target.matches('[data-fine]')) ok = await store.set(path + 'fine', e.target.value.trim());
+      else return;
+      if (!ok) return;
+      toast('Saved for this game');
+      // Once it's closed, a corrected price means the board is counted again.
+      if (room.meta.status === 'closed') setTimeout(() => closeGame('price'), 300);
+    }
   }
 
   function paintAll() { paintNow(); paintPlayers(); paintSettings(); paintSheet(); paintPool(); paintScreen(); }
@@ -5274,6 +6850,19 @@ function HostApp(code) {
 (async function boot() {
   const role = (URLP.get('role') || '').toLowerCase();
   const code = (URLP.get('room') || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4);
+  const player = !['host', 'display', 'screen'].includes(role);
+  // A play-anytime game's player page never loads the Firebase SDK: it reads the room's meta over a plain request
+  // first, and an async room is played over plain requests from then on (no connection held; see createRestStore).
+  // restSaid: that request's answer in time ({ v: the room's meta, null for no such room }), or undefined when it was
+  // refused or took too long (a slow phone gets six seconds: past that, the SDK asks again below and holds a connection).
+  let restSaid;
+  if (player && code && firebaseConfigured()) {
+    $('#app').innerHTML = `<div class="p-wrap"><div class="panel p-card p-center" style="margin-top:14vh"><div class="p-spin">${ICON.ghost}</div><p class="p-p">Opening the game…</p></div></div>`;
+    const rest = createRestStore();
+    restSaid = await Promise.race([rest.get(roomPath(code) + '/meta').then(v => ({ v }), e => { console.warn(e); return undefined; }), new Promise(ok => setTimeout(ok, 6000))]);
+    const meta = restSaid && restSaid.v;
+    if (meta && meta.mode === 'async') { store = rest; watchConnection(); PlayerApp(code, meta); return; }
+  }
   try { await initStore(); }
   catch (e) {
     $('#app').innerHTML = `<div class="p-wrap"><div class="panel p-card p-center" style="margin-top:14vh"><h2 class="p-h">Can't connect</h2><p class="p-p">${esc(e.message || e)}</p><button class="btn block" style="margin-top:16px" onclick="location.reload()">Try again</button></div></div>`;
@@ -5287,7 +6876,11 @@ function HostApp(code) {
   watchConnection();
   if (role === 'host') HostApp(code);
   else if (role === 'display' || role === 'screen') DisplayApp(code, URLP.get('key') || '');
-  else PlayerApp(code);
+  else {
+    let meta = null;
+    if (code && (store.mode === 'demo' || !restSaid)) { try { meta = await getWithin(roomPath(code) + '/meta', 5000); } catch (e) { /* the player page says what's wrong */ } }
+    PlayerApp(code, meta && meta.mode === 'async' ? meta : null);
+  }
 })();
 </script>
 <script>
