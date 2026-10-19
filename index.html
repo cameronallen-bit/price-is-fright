@@ -9,7 +9,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="The Price Is Fright">
 <meta property="og:title" content="The Price Is Fright">
-<meta property="og:description" content="20 Halloween items. Guess the price. Play on your phone, whenever you've got ten minutes.">
+<meta property="og:description" content="20 Halloween items. Guess the price. Play on any device, whenever you've got ten minutes.">
 <meta property="og:url" content="https://cameronallen-bit.github.io/price-is-fright/">
 <meta property="og:image" content="https://cameronallen-bit.github.io/price-is-fright/img/share.jpg">
 <meta property="og:image:width" content="1200">
@@ -17,7 +17,7 @@
 <meta property="og:image:alt" content="The Price Is Fright, Avoya Marketing, with a jack-o'-lantern">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="The Price Is Fright">
-<meta name="twitter:description" content="20 Halloween items. Guess the price. Play on your phone, whenever you've got ten minutes.">
+<meta name="twitter:description" content="20 Halloween items. Guess the price. Play on any device, whenever you've got ten minutes.">
 <meta name="twitter:image" content="https://cameronallen-bit.github.io/price-is-fright/img/share.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -49,7 +49,7 @@
        nothing sensitive there.
     3. Optional: put listing photos in an img/ folder next to this file, named as in ITEMS.
        Any photo that's missing falls back to the remote listing photo, then to built-in art.
-    4. Push to GitHub Pages. Open ?role=host, click New game, open the display, and paste
+    4. Push to GitHub Pages. Open ?role=host, click New Live Game, open the display, and paste
        the join link into the Teams chat.
 
   Prices, reveal lines and fine print can also be edited live in the host console. Edits
@@ -100,10 +100,11 @@ const GAME = {
   encoreFinaleDoubles: true,    // the encore's last item doubles; ending the encore early doubles nothing
   encoreFromZero: true,         // true: a separate encore board starting at zero. false: it carries in the live totals
   // Play-anytime (async) mode: the host starts it from the console, shares one link, and everyone plays all 20 items on
-  // their own phone at their own pace. Results drop when the host closes the game.
+  // their own phone or computer at their own pace. With no close time, each player sees the standings so far the moment
+  // they finish; with one, the results drop when the game closes.
   asyncClockSeconds: 45,        // each item's own guess clock (0 = no timer)
   asyncClockChoices: [0, 30, 45, 60, 90],
-  asyncPollSeconds: 30,         // how often an open player page checks whether the game has closed
+  asyncPollSeconds: 10,         // how often an open player page checks whether the game has closed (it also checks at each guess and each Next)
   timeZone: "America/New_York", // the host enters close times in this time zone; players see them in their own
   debugClockOffset: 0           // testing only: ms added to every clock on this page (to test a close time without waiting)
 };
@@ -1053,14 +1054,6 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; z-index:
 .money .cur { font-family: var(--show); font-size: 30px; color: var(--candy); padding-top: 4px; }
 .money input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; color: var(--ink); font: 700 27px/1.2 var(--ui); padding: 10px 0; font-variant-numeric: tabular-nums; }
 .money input::placeholder { color: var(--faint); font-weight: 600; }
-/* thousand / million / billion: phone number pads have no letters */
-.p-units { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 10px 2px 0; }
-.p-units .lab { margin-right: 2px; font-size: 13px; font-weight: 600; color: var(--faint); }
-.p-units button { appearance: none; -webkit-appearance: none; margin: 0; padding: 8px 12px 7px; border-radius: 999px; border: 1.5px solid var(--line-2); background: rgba(255,255,255,.04);
-  color: var(--ink-2); font: 700 13px/1 var(--ui); cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: background .15s, border-color .15s, color .15s, transform .1s; }
-.p-units button:active { transform: scale(.95); }
-.p-units button[aria-pressed="true"] { background: var(--violet); border-color: var(--violet); color: #fff; }
-@media (hover: hover) { .p-units button:hover { border-color: var(--violet); } }
 .p-preview { margin: 8px 4px 0; font-size: 14px; line-height: 1.35; color: var(--muted); font-weight: 500; }
 .p-preview:empty { display: none; }
 .p-preview b { color: var(--ink); }
@@ -1803,6 +1796,11 @@ canvas.fireworks { position: fixed; inset: 0; width: 100%; height: 100%; z-index
 .p-scene.many .pi-dots i { width: 7px; height: 7px; border-width: 1.5px; }
 .p-scene.many .pi-dots i.now { width: 16px; }
 @media (max-width: 360px) { .p-scene.many .pi-dots i { width: 6px; height: 6px; } .p-scene.many .pi-dots i.now { width: 12px; } }
+/* the phone's item page leads with the question: no show-font name or subtitle above it */
+.p-scene.async .pi-q { font-size: 21px; line-height: 1.3; font-weight: 700; padding: 14px 16px 15px 12px; gap: 12px; }
+.p-scene.async .pi-q .qb { width: 32px; height: 32px; font-size: 22px; margin-top: -1px; }
+@media (max-width: 360px) { .p-scene.async .pi-q { font-size: 19px; } }
+@media (min-width: 760px) { .p-wrap.wide .p-scene.async .pi-q { font-size: 27px; gap: 15px; padding: 18px 20px 19px 16px; } .p-wrap.wide .p-scene.async .pi-q .qb { width: 38px; height: 38px; font-size: 26px; margin-top: 0; } }
 .a-next { display: flex; flex-direction: column; gap: 8px; animation: resIn .6s .3s cubic-bezier(.2,1,.3,1) both; }
 .a-next .p-small { margin: 0; text-align: center; }
 .a-h3 { font-size: 22px; margin: 0 0 10px; }
@@ -1852,7 +1850,6 @@ canvas.fireworks { position: fixed; inset: 0; width: 100%; height: 100%; z-index
 .offline-pill.saving { top: calc(10px + env(safe-area-inset-top)); left: 50%; right: auto; transform: translateX(-50%); background: var(--night-4); border-color: var(--line-2); color: var(--ink-2); }
 
 /* the host: the start screen's play-anytime entry, the setup card and the recent rooms */
-.h-anyline { margin: 14px auto 0 !important; font-size: 14px !important; color: var(--muted) !important; }
 .h-setup { padding: 22px 26px 24px; }
 .hs-t { margin: 0 0 6px; font-family: var(--show); font-weight: 400; font-size: 30px; color: var(--slime); text-shadow: 0 3px 0 #24620f; }
 .hs-lede { margin: 0 0 8px; color: var(--ink-2); font-size: 15px; }
@@ -1942,6 +1939,43 @@ canvas.fireworks { position: fixed; inset: 0; width: 100%; height: 100%; z-index
 .a-board .hd { flex-wrap: wrap; row-gap: 4px; }
 .a-shut { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0; padding: 10px 12px; border-radius: 12px; background: rgba(255,210,63,.1); border: 1px solid rgba(255,210,63,.45); color: #fff2c4; font-size: 14px; font-weight: 600; line-height: 1.35; text-align: center; }
 .a-shut svg { width: 16px; height: 16px; flex: none; color: var(--candy); }
+/* (round 2) the phone's sound switch: play-anytime phones play the effects, on unless muted */
+.p-snd { position: fixed; z-index: 57; left: calc(12px + env(safe-area-inset-left)); bottom: calc(12px + env(safe-area-inset-bottom)); width: 40px; height: 40px; padding: 0; border-radius: 50%;
+  display: grid; place-items: center; border: 1px solid var(--line-2); background: rgba(18,10,31,.8); color: var(--ink-2); cursor: pointer; -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 6px 16px rgba(0,0,0,.45); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); transition: transform .1s, color .15s; }
+.p-snd svg { width: 19px; height: 19px; display: block; }
+.p-snd.off { color: var(--faint); }
+.p-snd:active { transform: scale(.93); }
+@media (hover: hover) { .p-snd:hover { color: var(--ink); border-color: var(--violet); } }
+body.has-snd .p-wrap { padding-bottom: calc(66px + env(safe-area-inset-bottom)); }
+/* the results: the standings so far (no close time), and you vs. the crowd */
+.a-live { text-align: center; }
+.a-live .btn { margin-top: 12px; }
+.a-live .p-small { margin: 8px 0 0; }
+.a-crowd { text-align: center; }
+.a-crowd .a-h3 { margin: 8px 0 12px; }
+.cc-svg { display: block; width: 100%; max-width: 560px; height: auto; margin: 0 auto; touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+.cc-bg { fill: rgba(10,5,20,.5); stroke: var(--line); stroke-width: 1; }
+.cc-st { fill: rgba(255,255,255,.035); }
+.cc-mid { stroke: var(--candy); stroke-width: 2; stroke-dasharray: 5 4; opacity: .9; }
+.cc-ln { stroke: rgba(255,255,255,.22); stroke-width: 2; }
+.cc-ln.win { stroke: rgba(142,240,90,.7); }
+.cc-cr { fill: var(--pumpkin-hi); stroke: #1a0f2e; stroke-width: 1.2; }
+.cc-me { fill: #e2d6ff; stroke: #1a0f2e; stroke-width: 1.5; }
+.cc-n { font: 700 9px var(--ui); fill: var(--faint); text-anchor: middle; }
+.cc-n.dbl { fill: var(--candy); }
+.cc-lab { font: 800 8.5px var(--ui); fill: var(--faint); letter-spacing: .1em; }
+.cc-hit { fill: transparent; cursor: pointer; }
+.cc-sel { fill: rgba(255,255,255,.1); pointer-events: none; }
+.cc-key { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.cc-key span { display: inline-flex; align-items: center; gap: 7px; }
+.cc-key i { display: inline-block; flex: none; }
+.cc-key .k-me { width: 10px; height: 10px; border-radius: 50%; background: #e2d6ff; }
+.cc-key .k-cr { width: 8px; height: 8px; background: var(--pumpkin-hi); transform: rotate(45deg); }
+.cc-key .k-pr { width: 16px; border-top: 2px dashed var(--candy); }
+.cc-cap { margin: 10px 0 0; min-height: 2.8em; line-height: 1.45; }
+.cc-cap b { color: var(--ink); }
+.cc-cap .c-me { color: #e2d6ff; } .cc-cap .c-cr { color: var(--pumpkin-hi); } .cc-cap .c-pr { color: var(--candy); }
 </style>
 </head>
 <body>
@@ -2010,14 +2044,6 @@ function parseGuess(raw) {
   return Math.round(parseFloat(m[1]) * mult * 100) / 100;
 }
 const GUESS_MAX = 1e12;
-// The unit on the end of a typed guess ("1.5m", "2 million"), for the thousand/million/billion buttons.
-const UNIT_RE = /\s*(thousand|million|mill|mil|mm|billion|bn|trillion|k|m|b|t)\s*$/i;
-function unitKey(raw) {
-  const m = String(raw || '').match(UNIT_RE); if (!m) return '';
-  const u = m[1].toLowerCase();
-  return u === 'k' || u === 'thousand' ? 'k' : u[0] === 'm' ? 'm' : u[0] === 'b' ? 'b' : 't';
-}
-
 function rid(n = 10) {
   const a = 'abcdefghijkmnpqrstuvwxyz23456789', b = new Uint8Array(n);
   (window.crypto || window.msCrypto).getRandomValues(b);
@@ -2296,13 +2322,17 @@ function createRestStore() {
     stats,
     TS: { '.sv': 'timestamp' },
     on(path, cb, opts = {}) {
-      let live = true, last, timer = 0, busy = false;
+      let live = true, last, timer = 0, busy = null;
       const every = Math.max(5, opts.every || GAME.asyncPollSeconds || 30) * 1000;
-      const pull = async () => {
-        if (!live || busy) return; busy = true;
-        try { const v = await req('GET', path); const j = JSON.stringify(v); if (live && j !== last) { last = j; try { cb(v); } catch (e) { console.error(e); } } }
-        catch (e) { console.warn('[database] poll', e); }
-        finally { busy = false; }
+      const pull = () => {   // (one request at a time: asking again while one is out waits for that one)
+        if (!live) return Promise.resolve();
+        if (busy) return busy;
+        busy = (async () => {
+          try { const v = await req('GET', path); const j = JSON.stringify(v); if (live && j !== last) { last = j; try { cb(v); } catch (e) { console.error(e); } } }
+          catch (e) { console.warn('[database] poll', e); }
+          finally { busy = null; }
+        })();
+        return busy;
       };
       const loop = () => { clearTimeout(timer); timer = setTimeout(async () => { if (!document.hidden) await pull(); if (live) loop(); }, every); };
       const wake = () => { if (!document.hidden && live) { pull(); loop(); } };
@@ -2747,7 +2777,7 @@ const ART = (() => {
 /* ============================== SOUND (display only, synthesized) ============================== */
 const Sfx = (() => {
   let ctx = null, master = null, noiseBuf = null;
-  let on = KV.get('tpif:sound') !== 'off';
+  let key = 'tpif:sound', on = KV.get(key) !== 'off';   // (a play-anytime phone keeps its own switch: useKey)
   function ensure() {
     if (!ctx) {
       const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null;
@@ -2779,7 +2809,8 @@ const Sfx = (() => {
     unlock() { ensure(); },
     get ready() { return !!ctx && ctx.state === 'running'; },
     get on() { return on; },
-    set on(v) { on = !!v; KV.set('tpif:sound', on ? 'on' : 'off'); if (on) ensure(); },
+    set on(v) { on = !!v; KV.set(key, on ? 'on' : 'off'); if (on) ensure(); },
+    useKey(k) { key = k; on = KV.get(k) !== 'off'; },
     pop() { tone({ f: 520, f2: 900, d: .15, v: .16 }); },
     whoosh() { noise({ d: .55, v: .14, hp: 300, lp: 2200 }); tone({ f: 170, f2: 440, d: .5, v: .05 }); },
     tick(hot) { tone({ f: hot ? 1250 : 950, d: .06, type: 'square', v: hot ? .07 : .04, lp: 3200 }); },
@@ -3523,11 +3554,12 @@ function tileOf(g, price) {
   const c = closeness(g, price);
   return c >= 800 ? '🟩' : c >= 400 ? '🟨' : c >= 1 ? '🟧' : '⬛';
 }
-function shareCardText({ name, total, place, of, tiles, url, closed, shut, fun }) {
+function shareCardText({ name, total, place, of, tiles, url, closed, live, shut, fun }) {
   const rows = []; for (let k = 0; k < tiles.length; k += 10) rows.push(tiles.slice(k, k + 10).join(''));
   const who = name ? name + ' · ' : '';
   const line = fun ? `${who}${fmtPts(total)} pts · played just for fun`
     : closed && place ? `${who}${ordinal(place)} of ${of} · ${fmtPts(total)} pts`
+    : live && place ? `${who}${ordinal(place)} of ${of} so far · ${fmtPts(total)} pts`
     : shut ? `${who}${fmtPts(total)} pts · results coming soon`
     : `${who}${fmtPts(total)} pts · waiting on the rest of you`;
   return ['🎃 The Price Is Fright', line].concat(rows, [(closed || (shut && !fun) ? 'See the results: ' : 'Play it: ') + url]).join('\n');
@@ -3537,12 +3569,12 @@ function inviteText(code, meta, n, short) {
   const url = shareJoinUrl(code), when = meta && meta.closeAt ? fmtDrop(meta.closeAt, GAME.timeZone) + ' ET' : '';
   return short
     ? `🎃 Price Is Fright time. ${n} items, guess the price, ten minutes, play whenever: ${url}${when ? ` Results ${when}.` : ''}`
-    : `🎃 The Price Is Fright is open! ${n} Halloween items, guess the price, play whenever you've got ten minutes. Scan the code or tap: ${url}${when ? ` — results drop ${when}.` : ''}`;
+    : `🎃 The Price Is Fright is open! ${n} Halloween items, guess the price, play whenever you've got ten minutes. Scan the code or tap: ${url}${when ? ` — results drop ${when}.` : ' — see where you rank the moment you finish.'}`;
 }
 function reminderText(code, meta, left) {
   const url = shareJoinUrl(code), when = meta && meta.closeAt ? fmtDrop(meta.closeAt, GAME.timeZone) + ' ET' : '';
   const who = left > 0 ? `${left} of you haven't finished The Price Is Fright.` : "Still time to play The Price Is Fright.";
-  return `🎃 ${who} ${when ? `Results drop ${when}!` : 'Results drop when the game closes, so get your guesses in!'} ${url}`;
+  return `🎃 ${who} ${when ? `Results drop ${when}!` : 'Play it and see where you rank!'} ${url}`;
 }
 function announceText(code, board) {
   const medal = ['🥇', '🥈', '🥉'], top = (board || []).filter(e => e.rank <= 3).slice(0, 5);
@@ -3576,9 +3608,17 @@ function asyncPlayed(room) {
   return out;
 }
 // The close: score every item from the raw guesses (computeResult, closest bonus with ties, the last item doubled),
-// rank everyone (ties share a place), and write it all down for the player pages.
+// rank everyone (ties share a place), and write it all down for the player pages. Also what a phone counts for itself
+// when the game has no close time (the standings so far). A re-count after the close leaves out any guess that reached
+// the room after the close (a phone that hadn't heard yet).
 function asyncTally(room) {
   const items = asyncItems(room), set = asyncSettingsOf(room), prices = asyncPricesOf(room), results = {};
+  const m = (room && room.meta) || {}, cut = m.status === 'closed' && typeof m.closedAt === 'number' ? m.closedAt + 3000 : 0;
+  if (cut && room.guesses) {
+    const gs = {};
+    ents(room.guesses).forEach(([i, byPid]) => { const keep = {}; ents(byPid).forEach(([q, g]) => { if (!(g && typeof g.t === 'number' && g.t > cut)) keep[q] = g; }); gs[i] = keep; });
+    room = Object.assign({}, room, { guesses: gs });
+  }
   items.forEach((it, i) => {
     const r = computeResult(i, room, prices, false);
     if (!set.bonus) { r.closest = {}; Object.values(r.scores).forEach(s => { s.b = 0; }); }
@@ -3596,10 +3636,12 @@ function asyncTally(room) {
   });
   const votes = POLL.options.map(() => ({ n: 0, names: [] }));
   list.forEach(e => { const p = room.players[e.pid]; if (p && typeof p.poll === 'number' && votes[p.poll]) { votes[p.poll].n++; if (votes[p.poll].names.length < 6) votes[p.poll].names.push(p.name); } });
+  // the crowd's guess on each item (the middle one, on a ratio scale) and how many guessed, for "You vs. the crowd"
+  const crowd = items.map((_, i) => { const v = ents(results[i].scores).map(([, s]) => s.g).filter(x => x > 0); return { m: v.length ? Math.round(medianGuess(v) * 100) / 100 : 0, n: v.length }; });
   const final = {
     info: { at: store.TS, count: list.length, items: items.length, bonus: set.bonus },
     board: list.slice(0, 10).map(e => ({ pid: e.pid, name: e.name, total: e.total, rank: e.rank })),
-    poll: votes, players
+    poll: votes, players, crowd
   };
   return { results, final, list };
 }
@@ -3913,11 +3955,8 @@ function PlayerApp(code0, asyncMeta) {
   const later = (ms, fn) => timers.push(setTimeout(fn, Math.max(0, ms)));
   const clearLater = () => { while (timers.length) clearTimeout(timers.pop()); };
   const buzz = p => { if (navigator.vibrate) { try { navigator.vibrate(p); } catch (e) { /* ignore */ } } };
-  // A locked-in guess back in the box for editing: big round numbers in shorthand ("1.5m", "80m"), others in full.
-  const plainNum = v => {
-    for (const [n, u] of [[1e9, 'b'], [1e6, 'm']]) if (v >= n && Math.abs(v / n * 1000 - Math.round(v / n * 1000)) < 1e-6) return String(Math.round(v / n * 1000) / 1000) + u;
-    return Number(v).toLocaleString('en-US', { maximumFractionDigits: 2 });
-  };
+  // A locked-in guess back in the box for editing, in full ("1,500,000"): a phone's number pad has no letters.
+  const plainNum = v => Number(v).toLocaleString('en-US', { maximumFractionDigits: 2 });
 
   store.onConnected(c => {
     if (ASYNC || !c || !active || !pid) return;
@@ -4123,7 +4162,7 @@ function PlayerApp(code0, asyncMeta) {
         <div class="panel p-card p-hello"><div class="p-spin">${ICON.ghost}</div><h2 class="p-h">You're in, ${esc(me.name)}!</h2>
           <p class="p-p">Keep this page open. The whole game plays right here, in step with the big screen.</p>
           <ul class="p-how">
-            <li><span class="ic">${ICON.cart}</span><span>Guess the price of <b>${N_ITEMS} spooky things</b>. For big numbers, type <b>1.5</b> and tap <b>million</b>.</span></li>
+            <li><span class="ic">${ICON.cart}</span><span>Guess the price of <b>${N_ITEMS} spooky things</b>. Type the whole number: big ones get spelled out so you can check your zeros.</span></li>
             <li><span class="ic">${ICON.target}</span><span>Up to <b>1,000 points</b> for a close guess, plus <b>${fmtPts(GAME.closestBonus)}</b> to whoever's closest.</span></li>
             <li><span class="ic">${ICON.star}</span><span>The <b>last item</b> is worth double.</span></li>
           </ul></div>
@@ -4156,15 +4195,15 @@ function PlayerApp(code0, asyncMeta) {
       const dk = (enc ? 'e' : '') + i;   // draft key (encore drafts don't collide with the live game's)
       const R = resultsOf(room, enc);
       const dots = items.map((x, k) => `<i class="${k === i ? 'now' : k < i || R[k] ? 'done' : ''}${x.double ? ' dbl' : ''}"></i>`).join('');
-      const el = mk('p-scene' + (enc ? ' enc' : '') + (N > 12 ? ' many' : ''), `
+      const el = mk('p-scene' + (enc ? ' enc' : '') + (N > 12 ? ' many' : '') + (ASYNC ? ' async' : ''), `
         <div class="pi-left">
           <div class="pi-top"><span class="kick">${enc ? 'Encore item' : 'Item'} ${i + 1} of ${N}</span><span class="pi-dots" aria-hidden="true">${dots}</span></div>
           <div class="pi-photo${it.photoFit === 'poster' ? ' tall' : ''}">${it.double ? '<span class="sticker">Double points</span>' : ''}<div class="art">${artHTML(it)}</div></div>
         </div>
         <div class="pi-right">
-          <h2 class="pi-name">${esc(it.name)}</h2>
-          <div class="pi-by">${esc(it.subtitle)}</div>
-          <p class="pi-q" id="piq"><span class="qb" aria-hidden="true">?</span><span>${esc(it.question)}</span></p>
+          ${ASYNC ? '' : `<h2 class="pi-name">${esc(it.name)}</h2>
+          <div class="pi-by">${esc(it.subtitle)}</div>`}
+          <p class="pi-q" id="piq"${ASYNC ? ' role="heading" aria-level="2"' : ''}><span class="qb" aria-hidden="true">?</span><span>${esc(it.question)}</span></p>
           <div class="pi-buy">
             <div class="pi-pl">Price${it.unit ? `<em>${esc(it.unit)}</em>` : ''}</div>
             <div class="pi-price"><div class="pi-myst" role="img" aria-label="Price hidden"><span class="cur">$</span><span class="q">???</span></div><div class="pi-rowfit"></div></div>
@@ -4234,7 +4273,7 @@ function PlayerApp(code0, asyncMeta) {
         if (want === 'up') {
           act.innerHTML = `<div class="p-upbox"><span class="lk">${ICON.lock}</span><div><div class="lab">Time's up · guesses are locked</div>${m ? `<div class="v">Your guess: ${fmtMoney(m.v)}</div>` : `<div class="v none">You didn't get a guess in this time.</div>`}</div></div>
             <p class="p-upnote">${ICON.eye}<span>The price reveal is next</span></p>`;
-          if (prev) buzz(60);
+          if (prev) { buzz(60); if (ASYNC) Sfx.toll(); }
           return;
         }
         if (want === 'reveal') {
@@ -4250,28 +4289,13 @@ function PlayerApp(code0, asyncMeta) {
         act.innerHTML = `<div class="panel p-guess"><div class="gtime" aria-hidden="true"><i></i></div><form id="gf" autocomplete="off" novalidate>
             <div class="grow"><label class="money"><span class="cur">$</span><input id="gi" type="text" inputmode="decimal" enterkeyhint="done" placeholder="Your guess" aria-label="Your guess in dollars" aria-describedby="piq" maxlength="24"></label>
             <button class="btn" type="submit" id="gb">Lock it in</button></div>
-            <div class="p-units" role="group" aria-label="Big numbers"><span class="lab">Big number?</span><button type="button" data-u="k" aria-pressed="false">thousand</button><button type="button" data-u="m" aria-pressed="false">million</button><button type="button" data-u="b" aria-pressed="false">billion</button></div>
             <div class="p-preview" id="gp" aria-live="polite"></div>
             <p class="p-keep" id="gkeep" hidden></p>
           </form></div>`;
         const gi = $('#gi', act), m = mine();
         gi.value = drafts[dk] != null ? drafts[dk] : (m ? plainNum(m.v) : '');
-        gi.addEventListener('input', () => { drafts[dk] = gi.value; preview(); paintUnits(); });
-        // Phone number pads have no letters, so "1.5" then a tap on million, instead of counting zeros (a second tap
-        // takes it off again). The keyboard stays up while they tap.
-        let typing = false;   // was the keyboard up when they reached for a button? (then keep it up)
-        $$('[data-u]', act).forEach(b => {
-          b.addEventListener('pointerdown', () => { typing = document.activeElement === gi; });
-          b.addEventListener('mousedown', e => e.preventDefault());
-          b.addEventListener('click', () => {
-            const raw = gi.value.trim(), base = raw.replace(UNIT_RE, '').trim();
-            if (!base) { const gp = $('#gp', act); gp.className = 'p-preview bad'; gp.textContent = `Type the number first (like 1.5), then tap ${b.textContent}.`; gi.focus(); return; }
-            gi.value = base + (unitKey(raw) === b.dataset.u ? '' : b.dataset.u);
-            drafts[dk] = gi.value; preview(); paintUnits();
-            if (typing && document.activeElement !== gi) { try { gi.focus({ preventScroll: true }); } catch (e) { gi.focus(); } }
-          });
-        });
-        paintUnits();
+        // Big numbers are typed in full; the line under the box spells them out ("$1,500,000 · 1.5 million") to check the zeros.
+        gi.addEventListener('input', () => { drafts[dk] = gi.value; preview(); });
         $('#gf', act).addEventListener('submit', e => {
           e.preventDefault();
           const v = parseGuess(gi.value), s = stateOf(room);
@@ -4294,11 +4318,6 @@ function PlayerApp(code0, asyncMeta) {
         const c = clockInfo(s, now);
         bar.className = 'gtime' + (c.mode === 'run' ? (c.sec <= 5 ? ' hot' : c.sec <= 10 ? ' warn' : '') : c.mode === 'open' ? ' idle' : '');
         $('i', bar).style.transform = `scaleX(${c.mode === 'run' ? c.frac.toFixed(4) : c.mode === 'open' ? 1 : 0})`;
-      }
-      function paintUnits() {
-        const gi = $('#gi', act); if (!gi) return;
-        const u = unitKey(gi.value.trim());
-        $$('[data-u]', act).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.u === u)));
       }
       function preview() {
         const gi = $('#gi', act), gp = $('#gp', act); if (!gi || !gp) return;
@@ -4359,11 +4378,13 @@ function PlayerApp(code0, asyncMeta) {
         el.classList.toggle('hurry', c.mode === 'run' && c.sec <= 10 && !mine());
         const sig = c.mode + (c.mode === 'run' ? c.sec : '');
         if (sig === clockSig) return;
+        if (clockSig && c.mode === 'run' && c.sec <= 5 && c.sec > 0 && !mine()) Sfx.tick(true);
         clockSig = sig;
         clk.className = 'clk' + (c.mode === 'run' ? (c.sec <= 5 ? ' hot' : c.sec <= 10 ? ' warn' : '') : c.mode === 'up' ? ' up' : '');
         $('.ic', clk).innerHTML = c.mode === 'up' ? ICON.lock : ICON.clock;
         $('b', clk).textContent = c.mode === 'run' ? Math.floor(c.sec / 60) + ':' + String(c.sec % 60).padStart(2, '0') : '';
-        $('.st2', clk).textContent = c.mode === 'run' ? 'to guess' : c.mode === 'up' ? "Time's up" : 'No time limit';
+        $('.st2', clk).textContent = c.mode === 'run' ? 'to guess' : c.mode === 'up' ? "Time's up" : '';
+        clk.style.display = s.endsAt ? '' : 'none';   // no timer: no clock at all
       }
 
       /* the reveal: the same drums as the big screen, on the same clock */
@@ -4387,7 +4408,7 @@ function PlayerApp(code0, asyncMeta) {
         if (r.top < 60 || r.bottom > innerHeight - 40) { try { priceBox.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) { /* ignore */ } }
         row.play(plan, { elapsed, withHand: settingsOf(room).hand });
         later(plan.settle - elapsed, () => fitRow(true));
-        later(plan.land - elapsed, () => { buzz([25, 40, 70]); if (res.mult > 1) Lightning.strike({ big: true, sound: false }); });
+        later(plan.land - elapsed, () => { buzz([25, 40, 70]); if (res.mult > 1) Lightning.strike({ big: true, sound: ASYNC }); });
         later(plan.flare + 320 - elapsed, () => { done = true; landedSig = JSON.stringify(res); showResult(res, false); refix(); });
       }
       // Straight to the landed price: a host skip (with the flare) or a phone that arrived mid-reveal.
@@ -4397,7 +4418,7 @@ function PlayerApp(code0, asyncMeta) {
         if (fbox) fbox.classList.add('gone');
         fitRow(true, true);
         row.finish(plan, { withFlare: how === 'skip' });
-        if (how === 'skip' && res.mult > 1) Lightning.strike({ big: true, sound: false });
+        if (how === 'skip' && res.mult > 1) Lightning.strike({ big: true, sound: ASYNC });
         if (how === 'skip') later(400, () => showResult(res, false)); else showResult(res, true);
         later(Math.max(380, revealLandsAt(stateOf(room), res) + 320 - store.serverNow()), paintMe);
       }
@@ -4435,11 +4456,7 @@ function PlayerApp(code0, asyncMeta) {
         const others = ents(res.scores).filter(([q, sc]) => q !== pid && sc.g > 0);
         const beat = g ? others.filter(([, sc]) => off(sc.g) > off(g) + 1e-9).length : 0;
         let crowd = avg ? `Crowd's guess <b>${esc(fmtShort(avg))}</b>${g && others.length && !(res.closest && res.closest[pid]) && beat ? ` · you beat ${beat} of ${others.length} ${others.length === 1 ? 'other' : 'others'}` : ''}` : '';
-        if (ASYNC) {   // play-anytime: the crowd so far (once three others have guessed this item), and how many of them you beat
-          const oG = (res.others || []).filter(v => v > 0), bt = g ? oG.filter(v => off(v) > off(g) + 1e-9).length : 0;
-          avg = oG.length >= 3 ? medianGuess(g ? oG.concat([g]) : oG) : null;
-          crowd = avg ? `Crowd so far <b>${esc(fmtShort(avg))}</b>${g && bt ? (res.sampled ? ` · you beat ${Math.round(bt / oG.length * 100)}% of them` : ` · you beat ${bt} of ${oG.length}`) : ''}` : g && res.fetched && !oG.length && !funOn() ? "You're the first to play this one" : '';
-        }
+        if (ASYNC) { avg = null; crowd = ''; }   // play-anytime: no crowd on the reveal (it's on the results page: crowdCard)
         const chips = [];
         if (s && res.bull && res.bull[pid]) chips.push(`<span class="bonus gold">${ICON.star} Bullseye!${ASYNC ? ' Right on the money' : ` +${fmtPts(s.b)} bonus`}</span>`);
         else if (s && s.b) chips.push(`<span class="bonus">${ICON.target} Closest guess · +${fmtPts(s.b)} bonus</span>`);
@@ -4454,7 +4471,7 @@ function PlayerApp(code0, asyncMeta) {
         const namesHTML = names => { const out = names.map(n => n === myName ? `<em>${esc(n)} (you)</em>` : esc(n)); return out.length > 1 ? out.slice(0, -1).join(', ') + ' & ' + out[out.length - 1] : (out[0] || 'Nobody'); };
         after.innerHTML = `<div class="panel pi-res">
             <div class="vs"><div class="t me"><span class="k">Your guess</span>${g ? tileMoney(g, p) : '<span class="v none">No guess</span>'}</div><span class="x">vs</span><div class="t act"><span class="k">Actual price</span>${tileMoney(p, g)}</div></div>
-            ${(ASYNC ? g || avg : res.n) ? `<div class="meter" aria-hidden="true"><div class="trk"></div><span class="mid"></span>${g ? `<span class="mpin${edge(g)}" data-x="${xOf(g)}"><b>You</b><i></i><u></u></span>` : ''}${avg ? `<span class="mavg${edge(avg)}" data-x="${xOf(avg)}"><i></i><b>Crowd</b></span>` : ''}<div class="ends"><span>Too low</span><span>The price</span><span>Too high</span></div></div>` : ''}
+            ${!ASYNC && res.n ? `<div class="meter" aria-hidden="true"><div class="trk"></div><span class="mid"></span>${g ? `<span class="mpin${edge(g)}" data-x="${xOf(g)}"><b>You</b><i></i><u></u></span>` : ''}${avg ? `<span class="mavg${edge(avg)}" data-x="${xOf(avg)}"><i></i><b>Crowd</b></span>` : ''}<div class="ends"><span>Too low</span><span>The price</span><span>Too high</span></div></div>` : ''}
             <div class="pi-verdict">${verdictHTML(g, p)}</div>
             ${crowd ? `<div class="pi-crowd">${crowd}</div>` : ''}
             <div class="pi-gain${gain ? '' : ' zero'}">+<span class="gv">${fmtPts(instant ? gain : 0)}</span><small> pts</small></div>
@@ -4467,7 +4484,7 @@ function PlayerApp(code0, asyncMeta) {
             const ic = { close: ICON.target, high: ICON.up, bull: ICON.star, beyond: ICON.rocket }[c.kind];
             return `<div class="pc c-${c.kind}"><div class="ic">${ic}</div><div><div class="k">${esc(c.label)}</div><div class="who2">${c.names.length ? namesHTML(c.names) : 'Nobody'}</div><div class="d">${esc(c.detail)}</div></div></div>`;
           }).join('')}</div>`}`;
-        if (ASYNC) wireAsyncNext(after);
+        if (ASYNC) { wireAsyncNext(after); if (!instant && !funOn()) pullMeta(); }   // (and a fresh look at whether it's still open)
         const pins = $$('.meter .mpin, .meter .mavg', after);
         if (instant) {
           $$('.pi-after > *, .pi-res .bonus, .pi-gain', el).forEach(n => { n.style.animation = 'none'; });
@@ -4475,8 +4492,9 @@ function PlayerApp(code0, asyncMeta) {
         } else {
           requestAnimationFrame(() => requestAnimationFrame(() => pins.forEach(n => { n.style.left = n.dataset.x; })));
           countUp($('.gv', after), 0, gain, 1100);
-          if (s && res.bull && res.bull[pid]) { confetti(4200, 110); buzz([40, 60, 40, 60, 120]); }
+          if (s && res.bull && res.bull[pid]) { confetti(4200, 110); buzz([40, 60, 40, 60, 120]); if (ASYNC) Sfx.fanfare(); }
           else if (s && s.b) buzz([30, 50, 90]);
+          else if (ASYNC && gain > 0) Sfx.chime();
           later(450, () => { const r = after.getBoundingClientRect(); if (r.top > innerHeight * .62) { try { window.scrollBy({ top: r.top - innerHeight * .38, behavior: 'smooth' }); } catch (e) { /* ignore */ } } });
         }
         paintMe();
@@ -4492,7 +4510,7 @@ function PlayerApp(code0, asyncMeta) {
       function update() {
         const s = stateOf(room); if (!here(s)) return;
         if (s.phase === 'item') {
-          if (!factsOn) { factsOn = true; runFacts(fbox, it, i, s.shownAt, later, null); }
+          if (!factsOn) { factsOn = true; runFacts(fbox, it, i, s.shownAt, later, ASYNC ? () => { if (stateOf(room).phase === 'item') Sfx.ding(); } : null); }
           paintDeal(s, store.serverNow()); paintAct();
         } else if (s.phase === 'reveal') {
           if (!started) startReveal(s);
@@ -4516,8 +4534,9 @@ function PlayerApp(code0, asyncMeta) {
             fb.style.animationDelay = fb.firstElementChild.style.animationDelay = (-e) + 'ms';
             document.body.appendChild(fb);
             setTimeout(() => fb.remove(), 2800 - e);
-            if (e < 700) later(260 - e, () => Lightning.strike({ big: true, sound: false }));
+            if (e < 700) later(260 - e, () => { Lightning.strike({ big: true, sound: ASYNC }); if (ASYNC) Sfx.sting(); });
           }
+          if (ASYNC && s.phase === 'item' && e < 1500) Sfx.whoosh();   // a new item slides in
         },
         destroy() { row.stop(); removeEventListener('resize', onResize); document.removeEventListener('visibilitychange', onVis); if (io) io.disconnect(); pill.remove(); $$('.p-fbanner').forEach(n => n.remove()); }
       };
@@ -4606,13 +4625,19 @@ function PlayerApp(code0, asyncMeta) {
   // The podium for the final results and the encore champion, on the big screen's clock (podiumPlan): the rest of
   // the board counts down, third and second rise, the lights go down for "And the champion is…", then lightning
   // and the champion. Your own place shows as it's revealed.
-  // opts (play-anytime): me = your own entry when you're not in `list` (the top ten), of = how many played.
+  // opts (play-anytime): me = your own entry when you're not in `list` (the top ten), of = how many played, live = the
+  // standings so far (no close time), sfx = play the big screen's sounds (a play-anytime phone has no big screen).
   function podiumScreen(st, me, list, title, sub, enc, opts = {}) {
-    const P = podiumPlan(list.length), e = list.find(x => x.pid === pid) || opts.me || null, rest = list.slice(3, 10), of = opts.of || list.length;
+    const P = podiumPlan(list.length), e = list.find(x => x.pid === pid) || opts.me || null, rest = list.slice(3, 10), of = opts.of || list.length, sfx = !!opts.sfx;
     const stone = (x, cls) => `<div class="pfs ${cls}${x ? '' : ' empty'}${x && x.pid === pid ? ' me' : ''}">${cls === 'p1' ? `<div class="crown">${ICON.crown}</div>` : ''}<div class="who">${x ? esc(x.name) : ''}</div>
       <div class="st"><span class="rip">R.I.P.</span><span class="pl">${x ? x.rank : ''}</span><span class="pt">${x ? fmtPts(x.total) : ''}</span></div></div>`;
     let you = '';
-    if (e) {
+    if (e && opts.live) {
+      const tied = list.filter(x => x.rank === e.rank).length > 1;
+      if (e.rank === 1) you = `<div class="lab2">So far, the night belongs to…</div><div class="big">${tied ? 'Tied for the lead!' : "You're in the lead!"}</div><p class="p-p"><b>${fmtPts(e.total)}</b> points</p>`;
+      else you = `<div class="lab2">So far, you're</div><div class="p-rank">${e.rank}<small>${ordinal(e.rank).replace(/^\d+/, '')}</small></div><p class="p-p">of ${of} who've finished · <b>${fmtPts(e.total)}</b> points</p>
+        <h2 class="p-h" style="margin-top:10px;font-size:22px">${e.rank <= 3 ? 'On the podium, for now!' : 'Thanks for playing along!'}</h2>`;
+    } else if (e) {
       const tied = list.filter(x => x.rank === e.rank).length > 1;
       if (e.rank === 1) you = `<div class="lab2">${enc ? 'The encore' : 'The night'} belongs to…</div><div class="big">${tied ? 'Tied for the win!' : 'You won!'}</div><p class="p-p"><b>${fmtPts(e.total)}</b> points</p>`;
       else you = `<div class="lab2">You finished</div><div class="p-rank">${e.rank}<small>${ordinal(e.rank).replace(/^\d+/, '')}</small></div><p class="p-p">of ${of} · <b>${fmtPts(e.total)}</b> points</p>
@@ -4637,17 +4662,21 @@ function PlayerApp(code0, asyncMeta) {
         const T = (ms, fn) => { if (ms - e0 < -250) fn(true); else later(ms - e0, () => fn(false)); };
         const on = sel => { const n = $(sel, el); if (n) n.classList.add('on'); };
         const rows = $$('.pf-rest .br', el);
-        rows.slice().reverse().forEach((r, k) => T(P.restAt + k * P.step, () => r.classList.add('on')));
-        T(P.third, () => on('.pfs.p3'));
-        T(P.second, () => on('.pfs.p2'));
+        rows.slice().reverse().forEach((r, k) => T(P.restAt + k * P.step, late => { r.classList.add('on'); if (!late && sfx) Sfx.pop(); }));
+        T(P.third, late => { on('.pfs.p3'); if (!late && sfx && list[2]) { Sfx.slam(); Sfx.rise(); } });
+        T(P.second, late => { on('.pfs.p2'); if (!late && sfx && list[1]) { Sfx.slam(); Sfx.rise(); } });
         if (e) T(myAt, late => { on('.pf-you'); if (!late && e.rank !== 1) buzz(30); });
-        T(P.hush, () => { if (store.serverNow() - (st.at || 0) < P.champ) el.classList.add('hush'); });
+        T(P.hush, late => {
+          if (store.serverNow() - (st.at || 0) >= P.champ) return;
+          el.classList.add('hush');
+          if (!late && sfx && list.length) { const sec = (P.champ - P.hush) / 1000; Sfx.drumroll(sec); Sfx.organ(sec); }
+        });
         T(P.champ, late => {
           el.classList.remove('hush'); el.classList.add('crowned'); on('.pfs.p1');
           if (late || !list.length) return;
-          Lightning.strike({ big: true, sound: false });
+          Lightning.strike({ big: true, sound: sfx }); if (sfx) Sfx.fanfare();
           const r = $('.pfs.p1', el).getBoundingClientRect(), cx = r.left + r.width / 2;
-          later(300, () => { confetti(e && e.rank === 1 ? 8000 : 5000, e && e.rank === 1 ? 220 : 120); fireworks([[cx - 90, r.top - 10, 0], [cx + 100, r.top - 50, 300], [cx, r.top - 110, 650]]); batBurst(cx, r.top + 60, 9, 40); });
+          later(300, () => { confetti(e && e.rank === 1 ? 8000 : 5000, e && e.rank === 1 ? 220 : 120); fireworks([[cx - 90, r.top - 10, 0], [cx + 100, r.top - 50, 300], [cx, r.top - 110, 650]]); batBurst(cx, r.top + 60, 9, 40); if (sfx) [0, .3, .65].forEach(t => Sfx.boom(t)); });
           if (e && e.rank === 1) buzz([60, 80, 60, 80, 200]);
         });
       }
@@ -4662,7 +4691,6 @@ function PlayerApp(code0, asyncMeta) {
      back to the same place) and in the room (players/{pid}, guesses/{i}/{pid}), so a new device can pick it up too.
      On a real game none of this holds a database connection (createRestStore): it polls the room's meta for the close. */
   const abase = () => roomPath(code);
-  const CROWD_SAMPLE = 120;
   const progKey = () => 'tpif:async:' + code + ':' + pid;
   const blankProg = () => ({ i: null, shownAt: 0, g: {}, lk: {}, rv: {}, done: false });
   const prog = () => (A.fun && A.fun.on ? A.fun : A.prog);
@@ -4670,6 +4698,8 @@ function PlayerApp(code0, asyncMeta) {
   const viewAt = k => viewOf(A.items[k], A.prices);
   const isClosed = () => !!(A.meta && A.meta.status === 'closed');
   const closingNow = () => !isClosed() && !!(A.meta && A.meta.closeAt) && clockNow() >= A.meta.closeAt;
+  // No close time: nobody waits for the host. A player who finishes goes straight to the standings so far (loadLive).
+  const openEnded = () => !!A && !isClosed() && !(A.meta && A.meta.closeAt);
   function saveProg() {
     if (!pid || !A) return;
     try { KV.set(progKey(), JSON.stringify({ prog: A.prog, pend: A.pend, fun: A.fun || null })); } catch (e) { /* ignore */ }
@@ -4698,7 +4728,8 @@ function PlayerApp(code0, asyncMeta) {
 
   async function asyncBoot(meta) {
     active = true; screen = '';
-    A = { meta, crowd: {}, res: {}, pend: {}, prog: blankProg(), fun: null, final: null, mine: null, headTotal: null, board: null, joinedCount: 0, screenN: 0, notify: false };
+    A = { meta, res: {}, pend: {}, prog: blankProg(), fun: null, final: null, mine: null, live: null, liveMine: null, headTotal: null, board: null, joinedCount: 0, screenN: 0, notify: false };
+    setupSound();
     app.innerHTML = `<div class="p-wrap"><div class="panel p-card p-center" style="margin-top:14vh"><div class="p-spin">${ICON.ghost}</div><p class="p-p">Opening the game…</p></div></div>`;
     try {
       const b = abase();
@@ -4722,7 +4753,7 @@ function PlayerApp(code0, asyncMeta) {
       try { p = await getWithin(abase() + '/players/' + id); } catch (e) { console.warn(e); }
       if (p && p.name) await loadProgress(id, p); else dropId(code);
     }
-    unsub = store.on(abase() + '/meta', onMeta);   // the close, a close time, a reopen (polled every 30 s on a real game)
+    unsub = store.on(abase() + '/meta', onMeta);   // the close, a close time, a reopen (polled every 10 s on a real game, and at each guess)
     if (!pid && !isClosed() && !closingNow()) showAsyncJoin();
     else asyncRoute();
   }
@@ -4758,8 +4789,7 @@ function PlayerApp(code0, asyncMeta) {
       const g = P.g[k];
       if (g > 0) room.guesses[k] = { [pid]: { v: g, t: P.lk[k] || 0 } };
       if (k < played || g > 0 || P.rv[k]) {
-        const old = A.res[k], r = asyncResult(A.items[k], viewAt(k), pid, me.name, g, old && old.g === g ? old.others : []);
-        if (old && old.g === g) { r.fetched = old.fetched; r.sampled = old.sampled; }
+        const r = asyncResult(A.items[k], viewAt(k), pid, me.name, g, []);
         r.g = g; A.res[k] = r; room.results[k] = r;
       }
     }
@@ -4768,7 +4798,7 @@ function PlayerApp(code0, asyncMeta) {
     const P = prog(), shownAt = P.shownAt || clockNow(), secs = A.set.secs;
     room.state = { phase: 'item', index: k, shownAt, secs: secs || GAME.clockSeconds, endsAt: secs ? shownAt + secs * 1000 : 0, revealAt: 0 };
     rebuildResults();
-    if (P.g[k] > 0 || P.rv[k]) { room.state.phase = 'reveal'; room.state.revealAt = P.lk[k] || P.rv[k] || shownAt; if (!A.res[k].fetched) fetchCrowd(k); }
+    if (P.g[k] > 0 || P.rv[k]) { room.state.phase = 'reveal'; room.state.revealAt = P.lk[k] || P.rv[k] || shownAt; }
   }
 
   // Which screen: the results once the game has closed, the done screen, the closed-for-guessing note, the intro, or an item.
@@ -4787,7 +4817,12 @@ function PlayerApp(code0, asyncMeta) {
     }
     if (!pid) { if (!closingNow()) return showAsyncJoin(); room.state = { phase: 'aclosing', index: -1 }; return render(); }   // (too late to join: the results are on the way)
     const P = A.prog;
-    if (P.done) { rebuildResults(); room.state = { phase: 'adone', index: -1 }; render(); loadBoard(); return; }
+    if (P.done && openEnded()) {   // no close time: straight to the podium, counted on this phone (refresh to count again)
+      rebuildResults();
+      if (!A.live) { A.headTotal = null; room.state = { phase: 'alive', index: -1 }; render(); loadLive(); return; }
+      A.headTotal = A.liveMine ? A.liveMine.total : null; room.state = { phase: 'aresults', index: -1 }; return render();
+    }
+    if (P.done) { rebuildResults(); A.headTotal = null; A.live = null; A.liveMine = null; room.state = { phase: 'adone', index: -1 }; render(); loadBoard(); return; }
     if (closingNow()) { rebuildResults(); room.state = { phase: 'aclosing', index: -1 }; return render(); }
     if (P.i == null) { room.state = { phase: 'aintro', index: -1 }; return render(); }
     setItemState(P.i); render();
@@ -4828,7 +4863,7 @@ function PlayerApp(code0, asyncMeta) {
           if (!funOn()) queueWrite({ [`players/${pid}/at`]: store.TS });
           rebuildResults();
           room.state = Object.assign({}, s, { phase: 'reveal', revealAt: now });
-          fetchCrowd(s.index); render(); return;
+          checkIn(); render(); return;
         }
       } else A.upAt = 0;
     } else if (s.phase === 'reveal') { if (!funOn()) markNext(); }
@@ -4837,7 +4872,7 @@ function PlayerApp(code0, asyncMeta) {
   }
 
   // A guess, locked on submit: the drums start at once (timed from this moment), the guess is saved (and retried until
-  // it lands), and the guesses others have made on this item are fetched for the crowd marker.
+  // it lands), and the room is asked whether the game is still open (checkIn).
   function asyncLock(i, v) {
     const s = room.state; if (!s || s.phase !== 'item' || s.index !== i) return;
     if (!funOn() && (isClosed() || closingNow())) return asyncRoute();
@@ -4850,24 +4885,21 @@ function PlayerApp(code0, asyncMeta) {
       const t = asyncTotal();
       queueWrite({ [`guesses/${i}/${pid}`]: { v, t: store.TS }, [`players/${pid}/total`]: t, [`players/${pid}/at`]: store.TS });
     }
-    fetchCrowd(i);
+    checkIn();
     render();
   }
 
-  // The crowd so far (this item's other guesses) and the running place among everyone's totals so far. The result
-  // object is filled in place, so a reveal still spinning lands with it.
-  async function fetchCrowd(i) {
-    const res = A.res[i]; if (!res) return;
-    try {
-      // (a big room sends a sample of the item's guesses, plenty for the crowd's middle guess and your share of it)
-      const gp = abase() + '/guesses/' + i, gq = store.query ? store.query(gp, 'orderBy=%22%24key%22&limitToLast=' + CROWD_SAMPLE) : store.get(gp);
-      const [gs, nm] = await Promise.all([gq, funOn() || !pid ? Promise.resolve('-') : store.get(abase() + '/players/' + pid + '/name')]);
-      if (nm === null) return removedByHost();
-      if (A.res[i] !== res) return;
-      res.others = ents(gs).filter(([q, g]) => q !== pid && g && g.v > 0).map(([, g]) => g.v);
-      res.n = (res.scores[pid] ? 1 : 0) + res.others.length; res.fetched = true; res.sampled = ents(gs).length >= CROWD_SAMPLE;
-      if (active && cur && cur.update) cur.update(room.players[pid] || {});
-    } catch (e) { console.warn('[crowd]', e); }
+  // At each guess (and each time's up): is the game still open (the meta, asked again right away), and is this player
+  // still in it (the host can remove someone)?
+  async function checkIn() {
+    if (funOn() || !pid || pid === 'pfun') return;
+    pullMeta();
+    try { const nm = await store.get(abase() + '/players/' + pid + '/name'); if (nm === null && active && A && !funOn()) removedByHost(); }
+    catch (e) { console.warn('[check-in]', e); }
+  }
+  // The meta, asked for now (plain requests only: the other backends hear about changes the moment they happen).
+  async function pullMeta() {
+    if (unsub && unsub.now) { try { await unsub.now(); } catch (e) { /* the poll keeps trying */ } }
   }
 
   // Writes wait here until the room has them, and are kept in this browser in case the page closes first.
@@ -4918,7 +4950,7 @@ function PlayerApp(code0, asyncMeta) {
   function asyncNextHTML(i, N) {
     const last = i >= N - 1, shut = shutLabel();
     if (shut) return `<div class="a-next">${shut.note}<button class="btn big block" type="button" data-anext>${shut.label}</button></div>`;
-    return `<div class="a-next"><button class="btn big block" type="button" data-anext>${last ? (funOn() ? 'See your score' : 'See how you did') : `Next item (${i + 2} of ${N})`}</button>${last || i > 0 ? '' : '<p class="p-small">Each clock starts when you tap. You can stop after any item and come back with the same link.</p>'}</div>`;
+    return `<div class="a-next"><button class="btn big block" type="button" data-anext>${last ? (funOn() ? 'See your score' : 'See how you did') : `Next item (${i + 2} of ${N})`}</button>${last || i > 0 ? '' : `<p class="p-small">${A.set.secs ? 'Each clock starts when you tap. ' : ''}You can stop after any item and come back with the same link.</p>`}</div>`;
   }
   // The game closed (or reached its close time) while you were on a result: Next leads there instead.
   function shutLabel() {
@@ -4940,7 +4972,11 @@ function PlayerApp(code0, asyncMeta) {
   }
   function wireAsyncNext(root) {
     $$('[data-anext]', root).forEach(b => {
-      b.onclick = () => { if (b.disabled) return; b.disabled = true; asyncNext(); };
+      b.onclick = async () => {
+        if (b.disabled) return; b.disabled = true;
+        if (!funOn() && unsub && unsub.now) await Promise.race([pullMeta(), new Promise(ok => setTimeout(ok, 1200))]);   // still open? (a quick look first)
+        asyncNext();
+      };
       if (FINE_POINTER && document.visibilityState === 'visible' && b.closest('.a-next')) { try { b.focus({ preventScroll: true }); } catch (e) { /* ignore */ } }
     });
   }
@@ -4957,7 +4993,8 @@ function PlayerApp(code0, asyncMeta) {
     const was = A.meta || {};
     A.meta = m; room.meta = m;
     const flipped = (was.status === 'closed') !== (m.status === 'closed');
-    if (m.status !== 'closed') { A.final = null; A.mine = null; A.headTotal = null; }
+    if (flipped) { A.live = null; A.liveMine = null; }
+    if (m.status !== 'closed') { A.final = null; A.mine = null; if (!(A.liveMine && openEnded())) A.headTotal = null; }
     else if (!flipped && m.talliedAt !== was.talliedAt && A.final) {   // the board was counted again (a fixed price, a removed player)
       A.final = null;
       if (!funOn() && ['aresults', 'await'].includes(room.state && room.state.phase)) { A.screenN++; asyncRoute(); return; }
@@ -4968,6 +5005,8 @@ function PlayerApp(code0, asyncMeta) {
       return;
     }
     const ph = room.state && room.state.phase;
+    // a close time set or cleared under a player who's finished: the done screen and the standings so far trade places
+    if (!flipped && pid && A.prog.done && ((ph === 'adone' && openEnded()) || ((ph === 'aresults' || ph === 'alive') && !isClosed() && !openEnded()))) { A.screenN++; asyncRoute(); return; }
     if (ph === 'reveal' && (flipped || closingNow())) { A.defer = true; markNext(); return; }
     if (flipped || ph === 'item' && closingNow() || ['aintro', 'adone', 'aclosing', 'await'].includes(ph)) {
       if (flipped || ph === 'item' || ph === 'aintro' && closingNow()) asyncRoute();
@@ -4977,14 +5016,67 @@ function PlayerApp(code0, asyncMeta) {
   async function loadFinal() {
     const b = abase() + '/async/final';
     try {
-      const [info, board, poll, mine] = await Promise.all([store.get(b + '/info'), store.get(b + '/board'), store.get(b + '/poll'), pid ? store.get(b + '/players/' + pid) : Promise.resolve(null)]);
+      const [info, board, poll, mine, crowd] = await Promise.all([store.get(b + '/info'), store.get(b + '/board'), store.get(b + '/poll'), pid ? store.get(b + '/players/' + pid) : Promise.resolve(null), store.get(b + '/crowd')]);
       if (!info) { setTimeout(() => { if (active && isClosed() && !A.final) loadFinal(); }, 5000); return; }
-      A.final = { info, board: ents(board).map(([, e]) => e).filter(e => e && e.name), poll: POLL.options.map((_, k) => (poll && poll[k]) || { n: 0, names: [] }) };
+      A.final = { info, board: ents(board).map(([, e]) => e).filter(e => e && e.name), poll: POLL.options.map((_, k) => (poll && poll[k]) || { n: 0, names: [] }), crowd: crowd || null };
       A.mine = mine && typeof mine.rank === 'number' ? mine : null;
       A.headTotal = A.mine ? A.mine.total : null;
       if (isClosed() && !funOn()) asyncRoute();
     } catch (e) { console.warn('[final]', e); setTimeout(() => { if (active && isClosed() && !A.final) loadFinal(); }, 8000); }
   }
+  // No close time: the standings so far, counted on this phone from the whole room (the console's own tally, with the
+  // closest-guess bonuses among everyone who's played). Ranked: the people who've finished. This phone's own guesses
+  // and finish count even if its writes are still on the way. Counted again on a reload or "Refresh the standings".
+  let liveBusy = false;
+  async function loadLive(manual) {
+    if (liveBusy || !A || !pid) return;
+    liveBusy = true;
+    try {
+      const r = await getWithin(abase(), 20000);
+      if (!active || !A) return;
+      if (!r || !r.meta) return;   // (the meta poll says the game's gone)
+      if (!r.players || !r.players[pid] || !r.players[pid].name) return removedByHost();
+      const P = A.prog, gs = {}, pl = Object.assign({}, r.players);
+      ents(r.guesses).forEach(([k, byPid]) => { gs[k] = Object.assign({}, byPid); });
+      for (let k = 0; k < A.n; k++) if (P.g[k] > 0) { gs[k] = gs[k] || {}; gs[k][pid] = { v: P.g[k], t: (gs[k][pid] && gs[k][pid].t) || 0 }; }
+      pl[pid] = Object.assign({}, pl[pid], { done: true, i: A.n });
+      if (r.async && r.async.prices) A.prices = r.async.prices;   // (a price the host fixed since this page opened)
+      const T = asyncTally(Object.assign({}, r, { guesses: gs, players: pl }));
+      const fin = T.list.filter(e => pl[e.pid] && pl[e.pid].done).map(e => Object.assign({}, e));
+      let rk = 0, lastV = null; fin.forEach((e, k) => { if (e.total !== lastV) { rk = k + 1; lastV = e.total; } e.rank = rk; });
+      const me = fin.find(e => e.pid === pid), mp = T.final.players[pid];
+      A.live = { info: { live: true, count: fin.length, items: A.n, bonus: T.final.info.bonus, playing: T.list.length - fin.length, at: clockNow() },
+        board: fin.slice(0, 10).map(e => ({ pid: e.pid, name: e.name, total: e.total, rank: e.rank })), poll: T.final.poll, crowd: T.final.crowd };
+      A.liveMine = me && mp ? { rank: me.rank, total: me.total, bonus: mp.bonus, closest: mp.closest } : null;
+      rebuildResults();
+      if (openEnded() && A.prog.done && !funOn()) { A.screenN++; asyncRoute(); }
+    } catch (e) {
+      console.warn('[standings]', e);
+      if (manual) toast("Couldn't refresh the standings. Check your connection and try again.");
+      else if (!A.live) setTimeout(() => { if (active && A && openEnded() && !A.live) loadLive(); }, 8000);
+    } finally { liveBusy = false; }
+  }
+
+  /* ---------- sound: a play-anytime phone has no big screen, so it plays the effects itself (on unless muted) ---------- */
+  let sndBtn = null;
+  function setupSound() {
+    if (sndBtn) return;
+    Sfx.useKey('tpif:psound');   // (its own switch, apart from a big screen's in the same browser)
+    const wake = () => { if (Sfx.on && !Sfx.ready) Sfx.unlock(); };   // browsers only start sound on a tap or a key
+    ['pointerdown', 'touchend', 'keydown'].forEach(t => addEventListener(t, wake, { capture: true, passive: true }));
+    sndBtn = document.createElement('button'); sndBtn.type = 'button'; sndBtn.className = 'p-snd';
+    sndBtn.addEventListener('click', e => { e.stopPropagation(); Sfx.on = !Sfx.on; if (Sfx.on) setTimeout(() => Sfx.pop(), 60); paintSnd(); });
+    document.body.appendChild(sndBtn); document.body.classList.add('has-snd');
+    paintSnd();
+  }
+  function paintSnd() {
+    if (!sndBtn) return;
+    sndBtn.innerHTML = Sfx.on ? ICON.soundOn : ICON.soundOff;
+    sndBtn.classList.toggle('off', !Sfx.on);
+    sndBtn.setAttribute('aria-pressed', String(!Sfx.on));
+    sndBtn.setAttribute('aria-label', 'Mute sound'); sndBtn.title = Sfx.on ? 'Sound on: tap to mute' : 'Sound off: tap to turn it on';
+  }
+
   function notifyClosed() {
     if (!A.notify || !('Notification' in window) || Notification.permission !== 'granted') return;
     try { new Notification('The Price Is Fright', { body: 'The results are in! Come see where you landed.', tag: 'tpif-' + code }); } catch (e) { /* ignore */ }
@@ -5003,7 +5095,7 @@ function PlayerApp(code0, asyncMeta) {
       await initStore();
       if (store.mode !== 'firebase') throw new Error('no SDK');
       console.warn('[database] writes were refused over plain requests: using the Firebase SDK on this page');
-      if (unsub) { unsub(); unsub = store.on(abase() + '/meta', onMeta); }
+      if (unsub) { unsub(); unsub = store.on(abase() + '/meta', onMeta); }   // (realtime from here: no .now)
       return true;
     } catch (e) { console.warn('[database] SDK fallback failed', e); store = old; sdkTried = false; return false; }
   }
@@ -5041,9 +5133,12 @@ function PlayerApp(code0, asyncMeta) {
   // The result card for the chat (spoiler-free) and the share button that sends it.
   function myShareText() {
     const P = prog(), closed = isClosed() && !!A.mine && !funOn();
+    const live = !closed && !funOn() && openEnded() && A.prog.done && !!A.liveMine && !!A.live;   // the standings so far
     const tiles = A.items.map((it, k) => tileOf(P.g[k], viewAt(k).price));
     const name = (room.players[pid] || {}).name || '';
-    return shareCardText({ name, tiles, url: shareJoinUrl(code), closed, shut: isClosed() || closingNow(), fun: funOn(), total: closed ? A.mine.total : asyncTotal(), place: closed ? A.mine.rank : 0, of: closed && A.final ? A.final.info.count : 0 });
+    return shareCardText({ name, tiles, url: shareJoinUrl(code), closed, live, shut: isClosed() || closingNow(), fun: funOn(),
+      total: closed ? A.mine.total : live ? A.liveMine.total : asyncTotal(), place: closed ? A.mine.rank : live ? A.liveMine.rank : 0,
+      of: closed && A.final ? A.final.info.count : live ? A.live.info.count : 0 });
   }
   async function shareText(text) {
     if (navigator.share && !FINE_POINTER) {   // phones: the share sheet (laptops copy instead: that's what goes in Teams)
@@ -5072,8 +5167,9 @@ function PlayerApp(code0, asyncMeta) {
   function waitLine() {
     const m = A.meta || {};
     if (closingNow()) return '<b>Closed.</b> The host will post the results soon.';
-    return m.closeAt ? `Results drop <b>${esc(fmtDrop(m.closeAt))}</b>.` : 'Results drop when the host closes the game.';
+    return m.closeAt ? `Results drop <b>${esc(fmtDrop(m.closeAt))}</b>.` : 'See where you rank the moment you finish.';
   }
+  const resultsNote = () => openEnded() ? 'The poll results are with the standings when you finish.' : 'Results come when the game closes.';
 
   /* ---------- joining ---------- */
   function showAsyncJoin(err) {
@@ -5082,7 +5178,7 @@ function PlayerApp(code0, asyncMeta) {
     const savedName = KV.get('tpif:name') || '', m = A.meta || {};
     app.innerHTML = `<div class="p-wrap"><div class="p-join">
       <div class="logo"><span class="l-top">The Price Is</span><span class="l-fright">Fright</span><span class="l-avoya">Avoya Marketing</span></div>
-      <p class="lede">${A.n} items. Guess the price.<br>Play at your own pace.<br>${m.closeAt ? `Results drop ${esc(fmtDrop(m.closeAt))}.` : 'Results drop when the host closes the game.'}</p>
+      <p class="lede">${A.n} items. Guess the price.<br>Play at your own pace.<br>${m.closeAt ? `Results drop ${esc(fmtDrop(m.closeAt))}.` : 'See where you rank the moment you finish.'}</p>
       <form class="panel p-card p-stack" id="ajf" novalidate>
         <div class="field"><label for="ajn">Your name</label><input id="ajn" class="input" maxlength="18" autocomplete="nickname" placeholder="First name + last initial" value="${esc(savedName)}"></div>
         <p class="p-err" id="jerr" role="alert">${esc(err || '')}</p>
@@ -5153,13 +5249,13 @@ function PlayerApp(code0, asyncMeta) {
       <div class="panel p-card p-hello"><div class="p-spin">${ICON.ghost}</div><h2 class="p-h">You're in, ${esc(me.name)}!</h2>
         <p class="p-p">All ${A.n} items play right here, at your own pace.</p>
         <ul class="p-how">
-          <li><span class="ic">${ICON.cart}</span><span>Type a price and <b>lock it in</b>. For big numbers, type <b>1.5</b> and tap <b>million</b>.</span></li>
-          <li><span class="ic">${ICON.clock}</span><span>${secs ? `Each item gives you <b>${secs} seconds</b> once you open it.` : 'No clock: take your time on each item.'} You can stop after any item and come back with the same link.</span></li>
-          <li><span class="ic">${ICON.target}</span><span>Up to <b>1,000 points</b> for a close guess, plus <b>${fmtPts(GAME.closestBonus)}</b> for the closest guess on each item (added when the game closes). The <b>last item</b> is worth double.</span></li>
+          <li><span class="ic">${ICON.cart}</span><span>Type a price and <b>lock it in</b>. Big numbers get spelled out as you type, so you can check your zeros.</span></li>
+          <li><span class="ic">${secs ? ICON.clock : ICON.ghost}</span><span>${secs ? `Each item gives you <b>${secs} seconds</b> once you open it. ` : ''}You can stop after any item and come back with the same link.</span></li>
+          <li><span class="ic">${ICON.target}</span><span>Up to <b>1,000 points</b> for a close guess, plus <b>${fmtPts(GAME.closestBonus)}</b> for the closest guess on each item${m.closeAt ? ' (added when the game closes)' : ''}. The <b>last item</b> is worth double.</span></li>
         </ul>
         <button class="btn big block a-start" type="button" data-anext>Start item 1</button>
         <p class="p-small a-sub">${n ? `${n} ${n === 1 ? 'person has' : 'people have'} played so far · ` : ''}${waitLine()}</p></div>
-      ${pollCard(me, 'While you\'re here', 'Results come when the game closes.')}`);
+      ${pollCard(me, 'While you\'re here', resultsNote())}`);
     wirePoll(el); wireAsyncNext(el);
     return { el, update(me2) { syncPoll(el, me2); $('.a-sub', el).innerHTML = (n ? `${n} ${n === 1 ? 'person has' : 'people have'} played so far · ` : '') + waitLine(); } };
   };
@@ -5189,7 +5285,7 @@ function PlayerApp(code0, asyncMeta) {
       <div class="panel p-board a-board"><div class="hd"><h2>The board so far</h2><span data-n></span></div><div data-board><p class="p-small" style="margin:6px 4px">Loading…</p></div>
         <p class="p-small a-note">Just the people who've finished. Closest-guess bonuses are added when the game closes, so places can still change.</p></div>
       <details class="panel a-rcp"><summary>See my guesses</summary>${recapHTML()}</details>
-      ${typeof me.poll !== 'number' ? pollCard(me, 'One more thing', 'Results come when the game closes.') : ''}`);
+      ${typeof me.poll !== 'number' ? pollCard(me, 'One more thing', resultsNote()) : ''}`);
     wirePoll(el);
     const paintCard = wireShare(el);
     const out = { el, closing: closingNow() };
@@ -5212,7 +5308,7 @@ function PlayerApp(code0, asyncMeta) {
       paintWait(); paintNotify(); out.board();
       // all 20 done: a little celebration, once
       const k = 'tpif:adone:' + code + ':' + pid;
-      if (!KV.get(k)) { KV.set(k, '1'); later(250, () => { confetti(3800, 110); buzz([30, 50, 30, 50, 90]); }); }
+      if (!KV.get(k)) { KV.set(k, '1'); later(250, () => { confetti(3800, 110); buzz([30, 50, 30, 50, 90]); Sfx.fanfare(); }); }
     };
     out.destroy = () => clearTimeout(boardT);
     return out;
@@ -5230,24 +5326,73 @@ function PlayerApp(code0, asyncMeta) {
     return { el };
   };
 
+  // You vs. the crowd, on the results page (the item pages leave the crowd out): one column per item, the price as the
+  // dashed middle line, your guess (a dot) and the crowd's guess (a diamond: the middle guess of everyone who played it)
+  // above the line when too high and below when too low, on a ratio scale that stops at 10× either way. Tap a column
+  // for its numbers.
+  function crowdCardHTML(crowd, live) {
+    if (!crowd || typeof crowd !== 'object') return '';   // (a game closed before this was added)
+    const P = prog(), N = A.n, W = 340, H = 196, L = 4, R = 4, T = 8, B = 22, cw = (W - L - R) / N, ph = H - T - B, mid = T + ph / 2;
+    let span = Math.log10(2);   // the scale reaches the furthest guess shown (at least 2× off, at most 10×)
+    for (let k = 0; k < N; k++) { const p = viewAt(k).price, c = crowd[k] || {}; [P.g[k], c.n > 0 ? +c.m : 0].forEach(v => { if (v > 0 && p > 0) span = Math.max(span, Math.abs(Math.log10(v / p)) * 1.12); }); }
+    span = Math.min(1, span);
+    const yOf = (v, p) => (T + (1 - (clamp(Math.log10(v / p) / span, -1, 1) + 1) / 2) * ph).toFixed(1);
+    const off = (v, p) => Math.abs(Math.log(v / p));
+    let beat = 0, comp = 0, art = '', hits = '';
+    for (let k = 0; k < N; k++) {
+      const p = viewAt(k).price, g = P.g[k] > 0 ? P.g[k] : 0, c = crowd[k] || {}, cm = c.n > 0 && c.m > 0 ? +c.m : 0;
+      const x0 = L + k * cw, xc = (x0 + cw / 2).toFixed(1);
+      let win = false;
+      if (cm && c.n - (g ? 1 : 0) >= 1) { comp++; if (g && off(g, p) < off(cm, p) - 1e-9) { beat++; win = true; } }
+      if (k % 2) art += `<rect x="${x0.toFixed(1)}" y="${T}" width="${cw.toFixed(1)}" height="${ph}" class="cc-st"/>`;
+      if (g && cm) art += `<line x1="${xc}" x2="${xc}" y1="${yOf(g, p)}" y2="${yOf(cm, p)}" class="cc-ln${win ? ' win' : ''}"/>`;
+      if (cm) { const y = +yOf(cm, p); art += `<path d="M${xc} ${(y - 5.5).toFixed(1)}L${(+xc + 5.5).toFixed(1)} ${y}L${xc} ${(y + 5.5).toFixed(1)}L${(+xc - 5.5).toFixed(1)} ${y}Z" class="cc-cr"/>`; }
+      if (g) art += `<circle cx="${xc}" cy="${yOf(g, p)}" r="4.6" class="cc-me${win ? ' win' : ''}"/>`;
+      art += `<text x="${xc}" y="${H - 7}" class="cc-n${A.items[k].double ? ' dbl' : ''}">${k + 1}</text>`;
+      hits += `<rect x="${x0.toFixed(1)}" y="0" width="${cw.toFixed(1)}" height="${H}" class="cc-hit" data-k="${k}"/>`;
+    }
+    const head = comp ? `You beat the crowd on ${beat} of ${comp} ${comp === 1 ? 'item' : 'items'}` : "You're the whole crowd so far!";
+    return `<div class="panel p-card a-crowd"><div class="lab2">You vs. the crowd</div><h3 class="p-h a-h3">${head}</h3>
+      <svg class="cc-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Your guess and the crowd's guess on each item, against the price">
+        <rect x="${L}" y="${T}" width="${W - L - R}" height="${ph}" rx="6" class="cc-bg"/>${art}
+        <line x1="${L}" x2="${W - R}" y1="${mid}" y2="${mid}" class="cc-mid"/>
+        <text x="${L + 6}" y="${T + 13}" class="cc-lab">TOO HIGH</text><text x="${L + 6}" y="${T + ph - 6}" class="cc-lab">TOO LOW</text>
+        <rect class="cc-sel" x="0" y="${T}" width="${cw.toFixed(1)}" height="${ph}" rx="3" style="display:none"/>${hits}</svg>
+      <div class="cc-key"><span><i class="k-me"></i>You</span><span><i class="k-cr"></i>The crowd</span><span><i class="k-pr"></i>The price</span></div>
+      <p class="p-small cc-cap" data-cap>The crowd is the middle guess of everyone who's played${live ? ' so far' : ''}. Tap an item for the numbers.</p></div>`;
+  }
+  function wireCrowd(root, crowd) {
+    const svg = $('.cc-svg', root); if (!svg) return;
+    svg.addEventListener('click', e => {
+      const h = e.target.closest('[data-k]'); if (!h) return;
+      const k = +h.dataset.k, p = viewAt(k).price, g = prog().g[k] > 0 ? prog().g[k] : 0, c = crowd[k] || {}, cm = c.n > 0 && c.m > 0 ? +c.m : 0;
+      const sel = $('.cc-sel', svg); sel.setAttribute('x', h.getAttribute('x')); sel.style.display = '';
+      $('[data-cap]', root).innerHTML = `<b>${k + 1}. ${esc(A.items[k].name)}</b><br>You <b class="c-me">${g ? esc(fmtShort(g)) : 'no guess'}</b> · Crowd <b class="c-cr">${cm ? esc(fmtShort(cm)) : '—'}</b> · Price <b class="c-pr">${esc(fmtShort(p))}</b>`;
+    });
+  }
+
   // The results: a title card, the tombstone podium (played from the moment this phone shows it), your place, your
-  // closest-guess bonuses (revealed here for the first time), the poll and the end screen.
+  // closest-guess bonuses (revealed here for the first time), you vs. the crowd, the poll and the end screen. A game
+  // with no close time shows the same page as the standings so far (A.live, counted on this phone) while it's open.
+  BUILD.alive = () => ({ el: mk('p-stack', `<div class="panel p-card p-center" style="margin-top:8vh"><div class="p-spin">${ICON.ghost}</div><h2 class="p-h">You're done!</h2><p class="p-p">Counting up the standings…</p></div>`) });
   BUILD.aresults = (st, me) => {
-    const F = A.final, I = F.info || {}, count = I.count || F.board.length, mine = A.mine, P = A.prog;
-    const seenKey = 'tpif:aseen:' + code + ':' + (pid || 'new'), fresh = A.replay || !KV.get(seenKey);
+    const live = !isClosed();
+    const F = live ? A.live : A.final, I = F.info || {}, count = I.count || F.board.length, mine = live ? A.liveMine : A.mine, P = A.prog;
+    const seenKey = 'tpif:aseen' + (live ? 'live:' : ':') + code + ':' + (pid || 'new'), fresh = A.replay || !KV.get(seenKey);
     A.replay = false;
-    const me2 = Object.assign({}, me, { poll: typeof me.poll === 'number' ? me.poll : -1 });   // (the poll's closed: no "last call" card)
+    const me2 = Object.assign({}, me, { poll: typeof me.poll === 'number' ? me.poll : -1 });   // (no "last call" card on the podium)
     const meE = mine ? { pid, name: me.name, total: mine.total, rank: mine.rank } : null;
-    const pod = podiumScreen({ at: fresh ? clockNow() + 2400 : 0 }, me2, F.board, 'Final results', `${count} ${count === 1 ? 'player' : 'players'} · ${A.n} items`, false, { me: meE, of: count });
-    const played = playedCount(P), partial = !!pid && mine && !P.done;
+    const sub = live ? `${count} finished${I.playing ? ` · ${I.playing} still playing` : ''}` : `${count} ${count === 1 ? 'player' : 'players'} · ${A.n} items`;
+    const pod = podiumScreen({ at: fresh ? clockNow() + 2400 : 0 }, me2, F.board, live ? 'Standings so far' : 'Final results', sub, false, { me: meE, of: count, live, sfx: true });
+    const played = playedCount(P), partial = !live && !!pid && mine && !P.done;
     const champs = F.board.filter(e => e.rank === 1), names = esc(joinNames(champs.map(e => e.name)));
     const cl = mine ? ents(mine.closest).map(([, k]) => +k) : [];
     const FOLD = cl.length > 8 ? 7 : cl.length;
-    const bonusHTML = !mine || I.bonus === false ? '' : `<div class="panel p-card a-bonus"><div class="lab2">Closest-guess bonuses</div>${cl.length
-      ? `<h3 class="p-h a-h3">Closest guess on ${cl.length === 1 ? '1 item' : cl.length + ' items'}: +${fmtPts(mine.bonus)}</h3><ul class="a-bl">${cl.map((k, j) => `<li${j >= FOLD ? ' hidden' : ''}>${esc(A.items[k] ? A.items[k].name : 'Item ' + (k + 1))}${A.items[k] && A.items[k].double ? ' <span class="flag dbl">2×</span>' : ''}</li>`).join('')}${FOLD < cl.length ? `<li class="more"><button type="button" class="linkbtn" data-blmore>+${cl.length - FOLD} more</button></li>` : ''}</ul>`
-      : `<p class="p-p" style="margin-top:6px">No closest guesses this time. Someone always got there first!</p>`}</div>`;
+    const bonusHTML = !mine || I.bonus === false ? '' : `<div class="panel p-card a-bonus"><div class="lab2">Closest-guess bonuses${live ? ' so far' : ''}</div>${cl.length
+      ? `<h3 class="p-h a-h3">Closest guess on ${cl.length === 1 ? '1 item' : cl.length + ' items'}: +${fmtPts(mine.bonus)}</h3><ul class="a-bl">${cl.map((k, j) => `<li${j >= FOLD ? ' hidden' : ''}>${esc(A.items[k] ? A.items[k].name : 'Item ' + (k + 1))}${A.items[k] && A.items[k].double ? ' <span class="flag dbl">2×</span>' : ''}</li>`).join('')}${FOLD < cl.length ? `<li class="more"><button type="button" class="linkbtn" data-blmore>+${cl.length - FOLD} more</button></li>` : ''}</ul>${live ? '<p class="p-small" style="margin:10px 0 0">Someone who plays later could still get closer.</p>' : ''}`
+      : `<p class="p-p" style="margin-top:6px">${live ? 'No closest guesses so far. Someone always got there first!' : 'No closest guesses this time. Someone always got there first!'}</p>`}</div>`;
     const votes = F.poll || [], vt = votes.reduce((s, v) => s + (v.n || 0), 0), vmax = Math.max(1, ...votes.map(v => v.n || 0));
-    const pollHTML = `<div class="panel p-card p-poll a-poll"><div class="lab2">Poll results</div><h2 class="p-h" style="margin-top:8px;font-size:24px">${esc(POLL.question)}</h2>
+    const pollHTML = `<div class="panel p-card p-poll a-poll"><div class="lab2">Poll results${live ? ' so far' : ''}</div><h2 class="p-h" style="margin-top:8px;font-size:24px">${esc(POLL.question)}</h2>
       <p class="p-small" style="margin:0">${vt ? `${vt} ${vt === 1 ? 'person' : 'people'} answered` : 'Nobody answered the poll this time'}</p>${POLL.options.map((o, k) => ({ o, k, v: votes[k] || { n: 0, names: [] } })).sort((a, b) => (b.v.n || 0) - (a.v.n || 0) || a.k - b.k).map(({ o, k, v }) => {
         const n = v.n || 0, top = vt && n === vmax;
         return `<div class="prw on${top ? ' top' : ''}"><div class="lb"><span>${esc(o)}${top ? '<span class="tp">Top pick</span>' : ''}${me.poll === k ? '<span class="yp">Your pick</span>' : ''}</span><span class="n">${n}<small>${vt ? Math.round(n / vt * 100) : 0}%</small></span></div>
@@ -5255,30 +5400,37 @@ function PlayerApp(code0, asyncMeta) {
       }).join('')}</div>`;
     const el = mk('p-stack', '');
     if (partial) el.appendChild(mk('panel p-card a-partial', `<p class="p-p">The game closed while you were playing: your ${played === 1 ? 'first item' : `first ${played} items`} counted.</p>${played < A.n ? `<button class="btn ghost block" type="button" data-fun style="margin-top:12px">Finish the rest for fun</button>` : ''}`));
-    if (!mine) el.appendChild(mk('panel p-card a-partial', `<h2 class="p-h" style="font-size:24px">${pid && me.name ? 'The game closed before you got to play.' : 'This game has closed.'}</h2><p class="p-p">Here's how it went.</p><button class="btn block" type="button" data-fun style="margin-top:14px">Play it just for fun</button><p class="p-small" style="margin:8px 0 0">Your score won't go on the board.</p>`));
+    if (!mine && !live) el.appendChild(mk('panel p-card a-partial', `<h2 class="p-h" style="font-size:24px">${pid && me.name ? 'The game closed before you got to play.' : 'This game has closed.'}</h2><p class="p-p">Here's how it went.</p><button class="btn block" type="button" data-fun style="margin-top:14px">Play it just for fun</button><p class="p-small" style="margin:8px 0 0">Your score won't go on the board.</p>`));
     el.appendChild(pod.el);
+    if (live) el.insertAdjacentHTML('beforeend', `<div class="panel p-card a-live"><p class="p-p">The game's still open, so places can change as more people finish.</p>
+      <button class="btn ghost block" type="button" data-refresh>Refresh the standings</button><p class="p-small">Counted ${esc(fmtClock(I.at || clockNow()))}</p></div>`);
     if (bonusHTML) el.insertAdjacentHTML('beforeend', bonusHTML);
+    if (pid && played) el.insertAdjacentHTML('beforeend', crowdCardHTML(F.crowd, live));
     if (I.corrected) el.insertAdjacentHTML('beforeend', `<p class="p-small a-corr">A price was corrected after the game closed, and the board was counted again with the right one.</p>`);
     if (mine) el.insertAdjacentHTML('beforeend', shareBlock('Share your result'));
     if (pid && played) el.insertAdjacentHTML('beforeend', `<details class="panel a-rcp"><summary>See my guesses</summary>${recapHTML()}</details>`);
+    if (live && typeof me.poll !== 'number') el.insertAdjacentHTML('beforeend', pollCard(me, 'One more thing', 'Your answer joins the poll results next time you refresh.'));
     if (vt) el.insertAdjacentHTML('beforeend', pollHTML);   // (nobody answered: nothing to show)
     el.insertAdjacentHTML('beforeend', `<div class="panel p-end"><div class="ghost-float" style="left:8px;top:16px" aria-hidden="true">${ICON.bigGhost}</div><div class="ghost-float" style="right:10px;bottom:22px;width:40px;animation-delay:-2s" aria-hidden="true">${ICON.bigGhost}</div>
       <div class="logo"><span class="l-top">The Price Is</span><span class="l-fright">Fright</span><span class="l-avoya">Avoya Marketing</span></div>
-      <h2>Thanks for playing!</h2>${champs.length ? `<div class="champ">Congratulations: <b>${names}</b></div>` : ''}
-      ${mine ? `<div class="mine2"><span>You: ${ordinal(mine.rank)} of ${count} · ${fmtPts(mine.total)} pts</span></div>` : ''}
+      <h2>Thanks for playing!</h2>${champs.length ? `<div class="champ">${live ? 'In the lead' : 'Congratulations'}: <b>${names}</b></div>` : ''}
+      ${mine ? `<div class="mine2"><span>You: ${ordinal(mine.rank)} of ${count}${live ? ' so far' : ''} · ${fmtPts(mine.total)} pts</span></div>` : ''}
       <div class="hh">Happy Halloween!</div><p class="p-small"><button type="button" class="linkbtn" data-replay>Replay the podium</button></p></div>`);
     if (mine) wireShare(el);
+    wirePoll(el); wireCrowd(el, F.crowd || {});
     $$('[data-fun]', el).forEach(b => { b.onclick = () => startFun(); });
     $$('[data-blmore]', el).forEach(b => { b.onclick = () => { $$('.a-bl li[hidden]', el).forEach(li => { li.hidden = false; }); b.closest('li').remove(); }; });
     $('[data-replay]', el).onclick = () => { A.replay = true; A.screenN++; asyncRoute(); };
+    $$('[data-refresh]', el).forEach(b => { b.onclick = async () => { b.disabled = true; b.textContent = 'Counting…'; await loadLive(true); if (b.isConnected) { b.disabled = false; b.textContent = 'Refresh the standings'; } }; });
     return {
-      el, update: pod.update,
+      el, update(me3) { syncPoll(el, me3); },
       mounted() {
         KV.set(seenKey, '1');
         if (fresh) {
-          const fb = mk('fin-banner p-fbanner', `<div class="fb"><div class="t1">The results are in</div><div class="t2">${count} ${count === 1 ? 'player' : 'players'}</div></div>`);
+          const fb = mk('fin-banner p-fbanner', live ? `<div class="fb"><div class="t1">You're done!</div><div class="t2">Here's the board so far</div></div>`
+            : `<div class="fb"><div class="t1">The results are in</div><div class="t2">${count} ${count === 1 ? 'player' : 'players'}</div></div>`);
           document.body.appendChild(fb); later(2800, () => fb.remove());
-          later(260, () => Lightning.strike({ big: true, sound: false }));
+          later(260, () => { Lightning.strike({ big: true, sound: true }); Sfx.sting(); });
         }
         pod.mounted();
       },
@@ -5469,7 +5621,7 @@ function DisplayApp(code, key) {
       const el = mk('screen s-lobby s-ainvite enter', `
         <div class="lob-left">
           <div class="marquee" id="mq"><div class="logo"><span class="l-top">The Price Is</span><span class="l-fright">Fright</span><span class="l-avoya">Avoya Marketing</span></div></div>
-          <div class="tagline">Play anytime, on your phone</div>
+          <div class="tagline">Play anytime, anywhere</div>
           <div class="ai-sub" id="aisub"></div>
         </div>
         <div class="joincard panel"><div class="qrbox">${QR.svg(shareJoinUrl(code))}</div><div class="scan">Scan the code, or go to</div><div class="url${(prettyUrl() + '/?room=' + code).length > 38 ? ' long' : ''}">${urlBreaks(prettyUrl() + '/?room=' + code)}</div><div class="codelab">${n} items · about ten minutes</div></div>
@@ -5477,7 +5629,7 @@ function DisplayApp(code, key) {
       const shown = new Map();
       // the line under the logo: when the results drop, or (past the close time, before the host's console counts it) closed
       let shut = null;
-      const paintSub = () => { const m2 = room.meta || {}; $('#aisub', el).textContent = shut ? 'Closed for guesses. Results soon!' : m2.closeAt ? 'Results drop ' + fmtDrop(m2.closeAt) : 'Results drop when the host closes the game'; };
+      const paintSub = () => { const m2 = room.meta || {}; $('#aisub', el).textContent = shut ? 'Closed for guesses. Results soon!' : m2.closeAt ? 'Results drop ' + fmtDrop(m2.closeAt) : 'See where you rank the moment you finish'; };
       function update() {
         const pl = namedPlayers(room).filter(([, p]) => p.shownAt || typeof p.i === 'number' || p.done).sort((a, b) => (a[1].joined || 0) - (b[1].joined || 0));
         const fin = pl.filter(([, p]) => p.done).length;
@@ -5986,12 +6138,11 @@ function HostApp(code) {
     app.innerHTML = `<div class="h-wrap"><div class="h-start">
       <div class="panel h-hero"><div class="logo"><span class="l-top">The Price Is</span><span class="l-fright">Fright</span><span class="l-avoya">Avoya Marketing</span></div>
         <p>Start a room, open the big screen, and drop the join link in the Teams chat. Everyone guesses on their phone or laptop.</p>
-        <div class="btns"><button class="btn big" id="hnewg" type="button">New game</button><button class="btn slime big" id="hnewa" type="button">New play-anytime game</button>${last ? `<button class="btn ghost big" id="hres" type="button">Resume room ${esc(last)}</button>` : ''}</div>
-        <p class="h-anyline">Play-anytime: one link for a chat, everyone plays all 20 items on their own phone whenever they like, and you close it when it's time.</p>
-        <div class="h-mode">${modeLine()}</div></div>
+        <div class="btns"><button class="btn big" id="hnewg" type="button">New Live Game</button><button class="btn slime big" id="hnewa" type="button">New Play-Anytime Game</button>${last ? `<button class="btn ghost big" id="hres" type="button">Resume room ${esc(last)}</button>` : ''}</div>
+        ${store.mode === 'firebase' ? '' : `<div class="h-mode">${modeLine()}</div>`}</div>
       <section class="panel h-setup" id="hsetup" hidden></section>
       ${recent.length ? `<section class="panel h-recent"><h3>Recent rooms</h3><div class="hr-list">${recent.map(r => `<button type="button" class="hr-row" data-room="${esc(r.c)}"><span class="code">${esc(r.c)}</span><span class="k">${r.kind === 'async' ? 'Play-anytime' : 'Live game'}</span><span class="s" data-rs="${esc(r.c)}"></span><span class="when">${esc(fmtWhen(r.at))}</span></button>`).join('')}</div></section>` : ''}
-      <details class="panel h-fold" id="fsheet0" open><summary><span class="t">Check prices before the meeting</span><span class="d">Edits save for every game</span></summary><div class="rs" id="hsheet"></div>
+      <details class="panel h-fold" id="fsheet0"><summary><span class="t">Check prices before the meeting</span><span class="d">Edits save for every game</span></summary><div class="rs" id="hsheet"></div>
         <p class="h-tip">Items flagged <span class="flag">Recheck</span> use live prices. Check them the week of the meeting and type the new number here.</p>${poolBlock()}</details>
     </div></div>`;
     sheetMode = 'edit'; buildSheet(); buildPool();
@@ -6044,7 +6195,7 @@ function HostApp(code) {
     } catch (e) {
       console.error(e);
       toast(e && e.timeout ? "Couldn't reach the database. Check the internet connection and the databaseURL in FIREBASE_CONFIG." : "Couldn't create a room. Check the connection and Firebase rules.");
-      if (b) { b.disabled = false; b.textContent = 'New game'; }
+      if (b) { b.disabled = false; b.textContent = 'New Live Game'; }
     }
   }
 
@@ -6119,11 +6270,11 @@ function HostApp(code) {
     const box = $('#hsetup'); if (!box) return;
     const n = asyncBankIds(pool).length;
     box.hidden = false;
-    box.innerHTML = `<h2 class="hs-t">New play-anytime game</h2>
-      <p class="hs-lede">Everyone plays all ${n} items on their own phone, whenever they like. You share one link, keep an eye on who's played, and close the game when it's time. The results go to the same chat.</p>
+    box.innerHTML = `<h2 class="hs-t">New Play-Anytime Game</h2>
+      <p class="hs-lede">Everyone plays all ${n} items whenever they like. You share one link and keep an eye on who's played.</p>
       <div class="set-row"><div class="sl">Items<small>The meeting's 10, then the encore's 10 (in the Encore pool's order). Prices are copied from Items &amp; prices now, and can be fixed in the game's console later.</small></div><span class="chip green hs-bank">${ICON.check} Live 10 + Encore 10 · ${n} items</span></div>
       <div class="set-row"><div class="sl">Guess clock<small>Each item's own clock starts when the player opens it, so guesses stay gut guesses</small></div><div class="seg" role="group" aria-label="Guess clock" id="hsclock">${GAME.asyncClockChoices.map(v => `<button type="button" data-secs="${v}" class="${v === aSecs ? 'on' : ''}" aria-pressed="${v === aSecs}">${v ? v + 's' : 'No timer'}</button>`).join('')}</div></div>
-      <div class="set-row"><div class="sl">Close time <span class="faint">(optional)</span><small>Shown to players as “Results drop Friday at 3 PM”, in their own time zone. You can set or change it later.</small></div><div class="hs-close"><input type="datetime-local" id="hsat" class="hs-dt" aria-label="Close time, Eastern"><span class="faint">Eastern</span></div></div>
+      <div class="set-row"><div class="sl">Close time <span class="faint">(optional)</span><small>Leave it empty and everyone sees the standings so far the moment they finish. Set one and the results drop then (“Results drop Friday at 3 PM”, in each player's own time zone). You can set or change it later.</small></div><div class="hs-close"><input type="datetime-local" id="hsat" class="hs-dt" aria-label="Close time, Eastern"><span class="faint">Eastern</span></div></div>
       <div class="h-actions"><button class="btn slime big block" type="button" id="hscreate">Create the game</button><div class="sub"><span class="hint">You'll get the link and QR code next.</span><button class="btn ghost small" type="button" id="hscancel">Cancel</button></div></div>`;
     $('#hsclock').onclick = e => { const b = e.target.closest('[data-secs]'); if (!b) return; aSecs = +b.dataset.secs; $$('[data-secs]', box).forEach(x => { const on = +x.dataset.secs === aSecs; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); }); };
     $('#hscancel').onclick = () => { box.hidden = true; box.innerHTML = ''; };
@@ -6217,7 +6368,7 @@ function HostApp(code) {
             <div class="h-how">
               <p><b>1.</b> Copy the invite (or the QR code) into Teams, Slack or a text group. Everyone plays on their own phone or laptop, whenever they like: all ${n} items, about ten minutes.</p>
               <p><b>2.</b> Watch the board here now and then. <b>Copy a reminder</b> nudges the people who haven't finished.</p>
-              <p><b>3.</b> When it's time, <b>close the game</b>. The console counts the board from everyone's guesses, closest-guess bonuses and all. (With a close time set, the game closes itself then if this console is open; if it isn't, guessing stops at that time and the board is counted the next time you open it.)</p>
+              <p><b>3.</b> With no close time, everyone sees the standings so far (closest-guess bonuses and all) the moment they finish, and can refresh to see the latest. When it's time, <b>close the game</b> to lock in the final board. (With a close time set, players wait for the close: the game closes itself then if this console is open; if it isn't, guessing stops at that time and the board is counted the next time you open it.)</p>
               <p><b>4.</b> Paste the <b>results announcement</b> in the same chat. Everyone's link now opens on their own place, the podium and the board.</p>
               <p><b>5.</b> Optional: <b>Open the results screen</b> to share the podium in a meeting. Closed by mistake? <b>Reopen</b> it.</p>
               <p class="faint">Nothing on this console needs to stay open in between. Keep its address to yourself: it shows the answers.</p>
@@ -6251,6 +6402,18 @@ function HostApp(code) {
     }
 
     /* ---------- the progress board ---------- */
+    // No close time: the standings so far, as the players' phones count them (finished players ranked, bonuses in).
+    function liveTally() {
+      const m = room.meta; if (m.status === 'closed' || m.closeAt) return null;
+      const key = JSON.stringify([rowsOf().map(r => [r.pid, r.n, r.done, r.total]), asyncPricesOf(room), asyncSettingsOf(room).bonus]);
+      if (A2.liveKey === key) return A2.live;
+      const T = asyncTally(room), pl = room.players || {};
+      const fin = T.list.filter(e => pl[e.pid] && pl[e.pid].done).map(e => ({ pid: e.pid, name: e.name, total: e.total }));
+      let rk = 0, lastV = null; fin.forEach((e, k) => { if (e.total !== lastV) { rk = k + 1; lastV = e.total; } e.rank = rk; });
+      const by = {}; fin.forEach(e => { by[e.pid] = e; });
+      A2.liveKey = key; A2.live = { fin, by };
+      return A2.live;
+    }
     function rowsOf() {
       const N = asyncItems(room).length, gs = room.guesses || {};
       return namedPlayers(room).map(([pid, p]) => {
@@ -6263,11 +6426,11 @@ function HostApp(code) {
     function paintBoard(force) {
       const box = $('#haboard'); if (!box) return;
       const N = asyncItems(room).length, closed = room.meta.status === 'closed', fin = closed ? (room.async && room.async.final) : null;
-      const rows = rowsOf(), fp = fin && fin.players ? fin.players : null;
-      if (fp) rows.sort((a, b) => ((fp[a.pid] ? fp[a.pid].rank : 1e9) - (fp[b.pid] ? fp[b.pid].rank : 1e9)) || a.name.localeCompare(b.name));
+      const rows = rowsOf(), lt = closed ? null : liveTally(), fp = fin && fin.players ? fin.players : lt ? lt.by : null;
+      if (fp) rows.sort((a, b) => ((fp[a.pid] ? fp[a.pid].rank : 1e9) - (fp[b.pid] ? fp[b.pid].rank : 1e9)) || (fp[a.pid] ? 0 : (b.i - a.i) || (b.started - a.started)) || a.name.localeCompare(b.name));
       const nDone = rows.filter(r => r.done).length, nPlay = rows.filter(r => r.kind === 'playing').length;
       const show = rows.filter(r => (A2.filter === 'all' || A2.filter === r.kind || (A2.filter === 'playing' && r.kind === 'joined')) && (!A2.q || r.name.toLowerCase().includes(A2.q)));
-      const finalOf = pid => fin && fin.players && fin.players[pid];
+      const finalOf = pid => (fin && fin.players && fin.players[pid]) || (lt && lt.by[pid]);
       const row = r => {
         const played = r.done ? N : Math.min(N, Math.max(0, r.i, r.n));   // items finished (the one they're on counts once it's guessed)
         const prog = r.done ? '<span class="ha-done">Done</span>' : r.started ? `<span class="ha-bar" title="${played} of ${N} played"><i style="width:${(played / N * 100).toFixed(1)}%"></i></span><span class="ha-of">${played}/${N}</span>` : '<span class="ha-of ha-new">Just joined</span>';
@@ -6276,7 +6439,7 @@ function HostApp(code) {
         return `<div class="ha-r ${r.kind}"><div class="ha-nm"><span class="n3">${esc(r.name)}</span><span class="ha-sub"><small class="ha-pm${r.done ? ' done' : ''}">${pm}</small><small class="ha-t" data-at="${r.at}">${r.at ? esc(agoText(r.at)) : ''}</small></span></div><span class="ha-p">${prog}</span><span class="s3">${score}</span>
           <button class="x${A2.kick === r.pid ? ' arm' : ''}" type="button" data-kick="${r.pid}" title="Remove ${esc(r.name)}" aria-label="Remove ${esc(r.name)}">${A2.kick === r.pid ? 'Remove?' : '×'}</button></div>`;
       };
-      const sig = JSON.stringify([rows.map(r => [r.pid, r.name, r.kind, r.i, r.n, r.total, r.at]), A2.filter, A2.q, A2.kick, closed, !!fin, room.meta.talliedAt]);
+      const sig = JSON.stringify([rows.map(r => [r.pid, r.name, r.kind, r.i, r.n, r.total, r.at]), A2.filter, A2.q, A2.kick, closed, !!fin, room.meta.talliedAt, lt && lt.fin]);
       if (!force && sig === A2.sig.board) return;
       A2.sig.board = sig;
       if (!$('.ha-list', box)) {
@@ -6291,7 +6454,7 @@ function HostApp(code) {
         : `<span class="chip">${rows.length} joined</span><span class="chip green">${nDone} finished</span><span class="chip gold">${nPlay} playing</span>`;
       $$('[data-filter]', box).forEach(b => { const on = b.dataset.filter === A2.filter; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
       const l2 = $('.ha-list', box), scroll = l2.scrollTop;
-      l2.classList.toggle('final', !!(fin && fin.info));
+      l2.classList.toggle('final', !!(fin && fin.info) || !!(lt && lt.fin.length));
       l2.innerHTML = show.length ? show.map(row).join('') : `<div class="pl-empty">${rows.length ? 'Nobody matches.' : 'Nobody yet. Paste the invite in the chat.'}</div>`;
       l2.scrollTop = scroll;
     }
@@ -6313,13 +6476,15 @@ function HostApp(code) {
       const box = $('#haclose'); if (!box || !room || !room.meta) return;
       const m = room.meta, closed = m.status === 'closed', rows = rowsOf(), playing = rows.filter(r => r.kind === 'playing').length, left = rows.filter(r => !r.done).length;
       const fin = room.async && room.async.final, closing = !closed && m.closeAt && clockNow() >= m.closeAt;
-      const sig = JSON.stringify([m.status, m.closeAt, m.closedAt, playing, left, A2.armed, !!fin, fin && fin.info && fin.info.count, A2.tallying, closing, fin && fin.board && fin.board.map(e => e.name + e.total)]);
+      const lt = closed ? null : liveTally(), top3 = lt ? lt.fin.filter(e => e.rank <= 3) : [];
+      const sig = JSON.stringify([m.status, m.closeAt, m.closedAt, playing, left, A2.armed, !!fin, fin && fin.info && fin.info.count, A2.tallying, closing, fin && fin.board && fin.board.map(e => e.name + e.total), top3.map(e => e.name + e.total + e.rank)]);
       if (sig === A2.sig.close) return; A2.sig.close = sig;
       if (!closed) {
         const armedC = A2.armed === 'close';
         box.innerHTML = `<div class="st-top"><div class="st-where"><span class="w">Open</span>${closing ? '<span class="ph hot">Past the close time</span>' : '<span class="ph go">Taking guesses</span>'}</div></div>
-          <p class="ha-when">${m.closeAt ? `${closing ? 'Was due to close' : 'Closes'} <b>${esc(fmtWhen(m.closeAt))}</b>${closing ? '. Guessing has stopped on players\' phones: close it to count the board.' : '. It closes itself then if this console is open.'}` : 'No close time set. Close it whenever everyone\'s had a go (or set a time under Settings).'}</p>
-          <div class="h-actions"><button class="btn ${armedC ? 'danger' : ''} big block" type="button" data-act="close"${A2.tallying ? ' disabled' : ''}>${A2.tallying ? 'Counting the board…' : armedC ? (playing ? `Click again to close · ${playing} ${playing === 1 ? 'person is' : 'people are'} still playing` : 'Click again to close and reveal the results') : 'Close the game and reveal results'}</button>
+          <p class="ha-when">${m.closeAt ? `${closing ? 'Was due to close' : 'Closes'} <b>${esc(fmtWhen(m.closeAt))}</b>${closing ? '. Guessing has stopped on players\' phones: close it to count the board.' : '. It closes itself then if this console is open.'}` : 'No close time: everyone sees the standings so far the moment they finish. Close it whenever you like to lock in the final board, or set a close time under Settings.'}</p>
+          ${lt ? `<div class="h-say ha-top3"><div class="lab">Top three so far</div>${top3.map(e => `<div class="co2"><b>${ordinal(e.rank)}</b><span><b>${esc(e.name)}</b> <span class="faint">· ${fmtPts(e.total)} pts</span></span></div>`).join('') || '<p class="faint">Nobody has finished yet.</p>'}</div>` : ''}
+          <div class="h-actions"><button class="btn ${armedC ? 'danger' : ''} big block" type="button" data-act="close"${A2.tallying ? ' disabled' : ''}>${A2.tallying ? 'Counting the board…' : armedC ? (playing ? `Click again to close · ${playing} ${playing === 1 ? 'person is' : 'people are'} still playing` : 'Click again to close and reveal the results') : m.closeAt ? 'Close the game and reveal results' : 'Close the game and lock in the results'}</button>
             <div class="sub"><span class="hint">${left ? `${left} of ${rows.length} haven't finished` : rows.length ? 'Everyone who joined has finished' : 'Nobody has joined yet'}</span><button class="btn ghost small" type="button" data-act="remind">Copy a reminder</button></div></div>`;
         return;
       }
