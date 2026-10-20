@@ -26,9 +26,10 @@
   THE PRICE IS FRIGHT  ·  Marketing Connections, Halloween 2026
 
   One file, three screens, picked by the URL:
+    (no params)                  the landing page: Join game / Host game
     ?role=host                   host console: creates the room and runs the show
     ?room=ABCD&role=display      the big screen you share in Teams
-    ?room=ABCD                   what players open (no params at all = a join page)
+    ?room=ABCD                   what players open (?role=join = the join page, with a room code box)
 
   Setup
     1. Paste your Firebase config into FIREBASE_CONFIG just below (same idea as Choc Trivia).
@@ -49,7 +50,7 @@
        nothing sensitive there.
     3. Optional: put listing photos in an img/ folder next to this file, named as in ITEMS.
        Any photo that's missing falls back to the remote listing photo, then to built-in art.
-    4. Push to GitHub Pages. Open ?role=host, click New Live Game, open the display, and paste
+    4. Push to GitHub Pages. Open the link and tap Host game (or go to ?role=host), click New Live Game, open the display, and paste
        the join link into the Teams chat.
 
   Prices, reveal lines and fine print can also be edited live in the host console. Edits
@@ -755,6 +756,12 @@ body.role-display.hide-cursor { cursor: none; }
 .qrbox { width: 300px; height: 300px; margin: 0 auto; background: #fff; border-radius: 22px; padding: 14px; box-shadow: 0 0 0 6px var(--pumpkin), 0 14px 30px rgba(0,0,0,.45); }
 .qrbox svg { width: 100%; height: 100%; display: block; }
 .joincard .scan { margin-top: 26px; font-size: 19px; color: var(--muted); }
+.joincard .scan.then { margin-top: 4px; }
+.joincard .scan.then b { color: var(--pumpkin-hi); font-weight: 700; }
+.joincard.live .qrbox { width: 280px; height: 280px; }   /* (room for the "and tap Join game" line) */
+.joincard.live .scan { margin-top: 20px; }
+.joincard.live .scan.then { margin-top: 4px; }
+.joincard.live .codelab { margin-top: 14px; }
 .joincard .url { font-size: 24px; font-weight: 700; color: var(--ink); margin-top: 4px; overflow-wrap: anywhere; line-height: 1.25; }
 .joincard .url.long { font-size: 20px; }
 .joincard .codelab { margin-top: 18px; font-size: 18px; color: var(--muted); text-transform: uppercase; letter-spacing: .16em; font-weight: 600; }
@@ -938,6 +945,13 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; z-index:
 .p-join .logo .l-avoya { font-size: 21px; }
 .p-join .lede { margin: 14px 0 22px; color: var(--ink-2); font-size: 17px; }
 .p-join form { display: flex; flex-direction: column; gap: 16px; }
+/* the landing page (the bare link): Join game / Host game */
+.p-land { padding-top: 8vh; }
+.land-doors { display: flex; flex-direction: column; gap: 14px; padding: 20px; }
+.land-doors .btn.big { font-size: 22px; padding: 20px 26px; }
+.land-warn { text-align: center; margin-top: 24px; }
+.land-warn .p-p b { color: var(--ink); }
+.land-warn .btn.big { margin-top: 6px; }
 .p-err { color: #ffb3bf; font-weight: 600; font-size: 15px; min-height: 1.2em; margin: 0; }
 
 /* poll options */
@@ -991,8 +1005,6 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; z-index:
 .pi-photo .sticker { position: absolute; left: 12px; top: 13px; z-index: 2; font-family: var(--show); font-size: 17px; letter-spacing: .04em; color: #0f2a05;
   padding: 8px 12px 4px; border-radius: 10px; background: linear-gradient(180deg, #b9ff93, var(--slime)); box-shadow: 0 3px 0 var(--slime-deep), 0 0 20px rgba(142,240,90,.5);
   transform: rotate(-6deg); animation: stickerPulse 1.2s ease-in-out infinite alternate; }
-.pi-name { margin: 2px 0 0; font-family: var(--show); font-weight: 400; font-size: 28px; line-height: 1.06; color: var(--ink); letter-spacing: .01em; text-shadow: 0 3px 0 rgba(0,0,0,.38); text-wrap: balance; overflow-wrap: break-word; }
-.pi-by { margin-top: -6px; font-size: 14px; line-height: 1.3; color: #c7b0ff; font-weight: 600; }
 /* the question: the one thing to answer, so it gets its own lit box */
 .pi-q { display: flex; align-items: flex-start; gap: 11px; margin: 2px 0 0; padding: 12px 14px 13px 11px; border-radius: 16px;
   background: linear-gradient(180deg, rgba(255,210,63,.14), rgba(255,210,63,.05)); border: 2px solid rgba(255,210,63,.55); box-shadow: 0 0 24px rgba(255,210,63,.08);
@@ -1156,20 +1168,12 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; z-index:
 .pi-note .ic svg { width: 100%; height: 100%; display: block; }
 .pi-note p { margin: 0; font-size: 15px; line-height: 1.42; font-weight: 600; color: var(--ink); }
 .pi-note .src { margin-top: 5px; font-size: 12px; color: var(--faint); }
-.pi-calls { padding: 14px 14px 10px; animation: resIn .6s .25s cubic-bezier(.2,1,.3,1) both; }
-.pi-calls h4 { margin: 0 0 4px; font-size: 11px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
-.pc { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 12px; align-items: center; padding: 10px 0; }
-.pc + .pc { border-top: 1px solid var(--line); }
-.pc .ic { width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; }
-.pc .ic svg { width: 20px; height: 20px; }
-.pc.c-close .ic { background: rgba(142,240,90,.16); color: var(--slime); }
-.pc.c-high .ic { background: rgba(255,210,63,.15); color: var(--candy); }
-.pc.c-bull .ic { background: rgba(255,122,26,.18); color: var(--pumpkin-hi); }
-.pc.c-beyond .ic { background: rgba(169,131,255,.18); color: var(--violet); }
-.pc .k { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
-.pc .who2 { font-family: var(--show); font-size: 19px; line-height: 1.12; padding-top: 4px; color: var(--ink); overflow-wrap: anywhere; }
-.pc .who2 em { font-style: normal; color: var(--slime); }
-.pc .d { font-size: 13px; color: var(--ink-2); margin-top: 2px; }
+/* who was closest, one line under your points (the big screen keeps the full Top guesses) */
+.pi-res .pi-closest { display: flex; align-items: center; justify-content: center; gap: 7px; margin-top: 12px; font-size: 14px; line-height: 1.35; color: var(--ink-2); text-wrap: balance; }
+.pi-res .pi-closest svg { flex: none; width: 16px; height: 16px; color: var(--slime); }
+.pi-res .pi-closest i { display: contents; }
+.pi-res .pi-closest .gold svg { color: var(--candy); }
+.pi-res .pi-closest b { color: var(--ink); font-weight: 700; }
 
 /* laptops: the big screen's two-column store page */
 @media (min-width: 760px) {
@@ -1180,8 +1184,6 @@ canvas.confetti { position: fixed; inset: 0; width: 100%; height: 100%; z-index:
   .p-wrap.wide .pi-dots { margin-left: 0; }
   .p-wrap.wide .pi-photo { height: auto; aspect-ratio: 1 / 1; max-height: 70vh; border-radius: 24px; }
   .p-wrap.wide .pi-photo .sticker { font-size: 22px; left: 16px; top: 18px; }
-  .p-wrap.wide .pi-name { font-size: clamp(34px, 3.6vw, 46px); }
-  .p-wrap.wide .pi-by { font-size: 17px; margin-top: -4px; }
   .p-wrap.wide .pi-q { font-size: 22px; gap: 14px; padding: 15px 18px 16px 14px; }
   .p-wrap.wide .pi-q .qb { width: 36px; height: 36px; font-size: 25px; }
   .p-wrap.wide .pi-pl { font-size: 13px; }
@@ -1796,11 +1798,11 @@ canvas.fireworks { position: fixed; inset: 0; width: 100%; height: 100%; z-index
 .p-scene.many .pi-dots i { width: 7px; height: 7px; border-width: 1.5px; }
 .p-scene.many .pi-dots i.now { width: 16px; }
 @media (max-width: 360px) { .p-scene.many .pi-dots i { width: 6px; height: 6px; } .p-scene.many .pi-dots i.now { width: 12px; } }
-/* the phone's item page leads with the question: no show-font name or subtitle above it */
-.p-scene.async .pi-q { font-size: 21px; line-height: 1.3; font-weight: 700; padding: 14px 16px 15px 12px; gap: 12px; }
-.p-scene.async .pi-q .qb { width: 32px; height: 32px; font-size: 22px; margin-top: -1px; }
-@media (max-width: 360px) { .p-scene.async .pi-q { font-size: 19px; } }
-@media (min-width: 760px) { .p-wrap.wide .p-scene.async .pi-q { font-size: 27px; gap: 15px; padding: 18px 20px 19px 16px; } .p-wrap.wide .p-scene.async .pi-q .qb { width: 38px; height: 38px; font-size: 26px; margin-top: 0; } }
+/* the phone's item page leads with the question: no show-font name or subtitle above it (live game and play-anytime) */
+.p-scene .pi-q { font-size: 21px; line-height: 1.3; font-weight: 700; padding: 14px 16px 15px 12px; gap: 12px; }
+.p-scene .pi-q .qb { width: 32px; height: 32px; font-size: 22px; margin-top: -1px; }
+@media (max-width: 360px) { .p-scene .pi-q { font-size: 19px; } }
+@media (min-width: 760px) { .p-wrap.wide .p-scene .pi-q { font-size: 27px; gap: 15px; padding: 18px 20px 19px 16px; } .p-wrap.wide .p-scene .pi-q .qb { width: 38px; height: 38px; font-size: 26px; margin-top: 0; } }
 .a-next { display: flex; flex-direction: column; gap: 8px; animation: resIn .6s .3s cubic-bezier(.2,1,.3,1) both; }
 .a-next .p-small { margin: 0; text-align: center; }
 .a-h3 { font-size: 22px; margin: 0 0 10px; }
@@ -3928,6 +3930,48 @@ function PriceRow(nD) {
     stop
   };
 }
+/* ============================== LANDING ==============================
+   The bare link (no room, no role): two doors. Join game opens the join page (?role=join); Host game opens the host
+   console (?role=host), after a one-time spoiler note, since the console lists every price. A computer that has
+   continued once (or has hosted before) goes straight through. No database connection is opened here. */
+function LandingApp() {
+  document.body.classList.add('role-landing');
+  const app = $('#app');
+  const joinHref = pageUrl() + '?role=join', hostHref = pageUrl() + '?role=host';
+  const hostKnown = () => KV.get('tpif:host:ok') === '1' || !!KV.get('tpif:host:last');
+  const logo = '<div class="logo"><span class="l-top">The Price Is</span><span class="l-fright">Fright</span><span class="l-avoya">Avoya Marketing</span></div>';
+  doors();
+
+  function doors() {
+    app.innerHTML = `<div class="p-wrap"><div class="p-join p-land">
+      ${logo}
+      <p class="lede">Guess the prices of spooky things.<br>The closest guesses win.</p>
+      <div class="panel p-card land-doors">
+        <a class="btn block big" href="${esc(joinHref)}" id="ljoin">Join game</a>
+        <a class="btn ghost block big" href="${esc(hostHref)}" id="lhost">Host game</a>
+      </div>
+    </div></div>`;
+    $('#lhost').addEventListener('click', e => {
+      if (hostKnown() || e.metaKey || e.ctrlKey || e.shiftKey) return;   // straight through (or a new tab, on purpose)
+      e.preventDefault(); spoiler();
+    });
+  }
+
+  function spoiler() {
+    app.innerHTML = `<div class="p-wrap"><div class="p-join p-land">
+      ${logo}
+      <div class="panel p-card p-stack land-warn" role="alertdialog" aria-labelledby="lwh" aria-describedby="lwp">
+        <div class="p-spin">${ICON.eye}</div>
+        <h2 class="p-h" id="lwh">Hosting the game?</h2>
+        <p class="p-p" id="lwp">The host console shows every price. If you're playing, tap <b>Join game</b> instead so nothing gets spoiled.</p>
+        <a class="btn block big" href="${esc(joinHref)}" id="lback">Join game instead</a>
+        <a class="btn ghost block" href="${esc(hostHref)}" id="lgo">I'm the host. Continue</a>
+      </div>
+    </div></div>`;
+    $('#lgo').addEventListener('click', () => KV.set('tpif:host:ok', '1'));
+    $('#lback').focus();
+  }
+}
 /* ============================== PLAYER ==============================
    Phones and laptops. Most people watch the game here, so the phone mirrors the big screen, timed off the same
    clock: the store listing and fact pop-up while people guess, the drum reveal of the price (then your guess
@@ -4201,9 +4245,7 @@ function PlayerApp(code0, asyncMeta) {
           <div class="pi-photo${it.photoFit === 'poster' ? ' tall' : ''}">${it.double ? '<span class="sticker">Double points</span>' : ''}<div class="art">${artHTML(it)}</div></div>
         </div>
         <div class="pi-right">
-          ${ASYNC ? '' : `<h2 class="pi-name">${esc(it.name)}</h2>
-          <div class="pi-by">${esc(it.subtitle)}</div>`}
-          <p class="pi-q" id="piq"${ASYNC ? ' role="heading" aria-level="2"' : ''}><span class="qb" aria-hidden="true">?</span><span>${esc(it.question)}</span></p>
+          <p class="pi-q" id="piq" role="heading" aria-level="2"><span class="qb" aria-hidden="true">?</span><span>${esc(it.question)}</span></p>
           <div class="pi-buy">
             <div class="pi-pl">Price${it.unit ? `<em>${esc(it.unit)}</em>` : ''}</div>
             <div class="pi-price"><div class="pi-myst" role="img" aria-label="Price hidden"><span class="cur">$</span><span class="q">???</span></div><div class="pi-rowfit"></div></div>
@@ -4439,8 +4481,8 @@ function PlayerApp(code0, asyncMeta) {
         const txt = full.length <= 9 || (other > 0 && sh === fmtShort(other) && Math.abs(v - other) >= .005) ? full : sh;
         return `<span class="v${txt.length > 9 ? ' long' : ''}">${txt}</span>`;
       }
-      // Your guess against the price, where everyone's guesses fell, your points, then the seller's note and the
-      // top guesses (the big screen's callouts).
+      // Your guess against the price, the number line (you and the crowd's guess), your points, who was closest, then
+      // the seller's note. (The big screen keeps the full Top guesses callouts.)
       function showResult(res, instant) {
         actSig = ''; paintAct();
         const s = res.scores && res.scores[pid], g = s ? s.g : null, p = res.price;
@@ -4463,12 +4505,19 @@ function PlayerApp(code0, asyncMeta) {
         if (s && res.highest && res.highest[pid] && !(res.closest && res.closest[pid]) && res.n > 1) chips.push(`<span class="bonus gold">${ICON.up} Highest guess of the round</span>`);
         if (s && res.beyond && res.beyond[pid] && it.beyond) chips.push(`<span class="bonus gold">${ICON.rocket} ${esc(it.beyond.label)}</span>`);
         const gain = s ? s.p + s.b : 0;
-        const calls = calloutsFor(i, res, room, enc, true);
-        if (!res.n) calls.push({ kind: 'close', label: 'No guesses', names: ['Nobody guessed!'], detail: 'Spooky silence on this one' });
-        const h = Math.max(0, calls.findIndex(c => c.kind === 'bull' || c.kind === 'close'));
-        const ordered = calls.length ? [calls[h], ...calls.filter((_, k) => k !== h)] : [];
-        const myName = (room.players[pid] || {}).name;
-        const namesHTML = names => { const out = names.map(n => n === myName ? `<em>${esc(n)} (you)</em>` : esc(n)); return out.length > 1 ? out.slice(0, -1).join(', ') + ' & ' + out[out.length - 1] : (out[0] || 'Nobody'); };
+        // Who was closest, in one line (the big screen keeps the full Top guesses). Nothing when it's just you: your
+        // chip already says so.
+        const closeLine = (() => {
+          if (ASYNC) return '';
+          if (!res.n) return `${ICON.ghost}<span>Nobody guessed this one</span>`;
+          const bull = Object.keys(res.bull || {}), best = bull.length ? bull : Object.keys(res.closest || {});
+          const rest = best.filter(q => q !== pid); if (!rest.length) return '';
+          const nm = (a => a.length > 3 ? a.slice(0, 2).join(', ') + ` & ${a.length - 2} more` : a.length > 1 ? a.slice(0, -1).join(', ') + ' & ' + a[a.length - 1] : a[0])(nameList(rest, res).map(n => `<b>${esc(n)}</b>`));
+          if (bull.length) return `<i class="gold">${ICON.star}</i><span>${rest.length < best.length ? 'Also right on the money' : 'Right on the money'}: ${nm}</span>`;
+          if (rest.length < best.length) return `${ICON.target}<span>Tied for closest with ${nm}</span>`;
+          const gs = [...new Set(rest.map(q => res.scores[q].g))];
+          return `${ICON.target}<span>Closest: ${nm}${gs.length === 1 ? ' · ' + esc(fmtShort(gs[0])) : ''}</span>`;
+        })();
         after.innerHTML = `<div class="panel pi-res">
             <div class="vs"><div class="t me"><span class="k">Your guess</span>${g ? tileMoney(g, p) : '<span class="v none">No guess</span>'}</div><span class="x">vs</span><div class="t act"><span class="k">Actual price</span>${tileMoney(p, g)}</div></div>
             ${!ASYNC && res.n ? `<div class="meter" aria-hidden="true"><div class="trk"></div><span class="mid"></span>${g ? `<span class="mpin${edge(g)}" data-x="${xOf(g)}"><b>You</b><i></i><u></u></span>` : ''}${avg ? `<span class="mavg${edge(avg)}" data-x="${xOf(avg)}"><i></i><b>Crowd</b></span>` : ''}<div class="ends"><span>Too low</span><span>The price</span><span>Too high</span></div></div>` : ''}
@@ -4477,13 +4526,11 @@ function PlayerApp(code0, asyncMeta) {
             <div class="pi-gain${gain ? '' : ' zero'}">+<span class="gv">${fmtPts(instant ? gain : 0)}</span><small> pts</small></div>
             ${chips.length ? `<div class="chips2">${chips.join('')}</div>` : ''}
             ${res.mult > 1 ? `<div class="dbl2">Double points on the ${enc ? 'encore ' : ''}finale</div>` : ''}
+            ${closeLine ? `<div class="pi-closest">${closeLine}</div>` : ''}
             ${ASYNC ? asyncTotHTML(res, i, N) : `<div class="tot2"><b>${fmtPts(meRow ? meRow.total : 0)}</b> ${enc ? 'encore ' : ''}total · <b>${meRow ? ordinal(meRow.rank) : '—'}</b> of ${list.length}</div>`}
           </div>
           ${res.reveal ? `<div class="pi-note"><span class="ic">${ICON.pumpkin}</span><div><p>${esc(res.reveal)}</p>${res.fine ? `<div class="src">Source: ${esc(res.fine)}</div>` : ''}</div></div>` : ''}
-          ${ASYNC ? asyncNextHTML(i, N) : `<div class="panel pi-calls"><h4>Top guesses</h4>${ordered.map(c => {
-            const ic = { close: ICON.target, high: ICON.up, bull: ICON.star, beyond: ICON.rocket }[c.kind];
-            return `<div class="pc c-${c.kind}"><div class="ic">${ic}</div><div><div class="k">${esc(c.label)}</div><div class="who2">${c.names.length ? namesHTML(c.names) : 'Nobody'}</div><div class="d">${esc(c.detail)}</div></div></div>`;
-          }).join('')}</div>`}`;
+          ${ASYNC ? asyncNextHTML(i, N) : ''}`;
         if (ASYNC) { wireAsyncNext(after); if (!instant && !funOn()) pullMeta(); }   // (and a fresh look at whether it's still open)
         const pins = $$('.meter .mpin, .meter .mavg', after);
         if (instant) {
@@ -5662,7 +5709,7 @@ function DisplayApp(code, key) {
           <div class="marquee" id="mq"><div class="logo"><span class="l-top">The Price Is</span><span class="l-fright">Fright</span><span class="l-avoya">Avoya Marketing</span></div></div>
           <div class="tagline">Come on down… if you dare!</div>
         </div>
-        <div class="joincard panel"><div class="qrbox">${QR.svg(shareJoinUrl(code))}</div><div class="scan">Scan the code, or go to</div><div class="url${prettyUrl().length > 38 ? ' long' : ''}">${urlBreaks(prettyUrl())}</div><div class="codelab">Room code</div><div class="bigcode">${esc(code)}</div></div>
+        <div class="joincard panel live"><div class="qrbox">${QR.svg(shareJoinUrl(code))}</div><div class="scan">Scan the code, or go to</div><div class="url${prettyUrl().length > 38 ? ' long' : ''}">${urlBreaks(prettyUrl())}</div><div class="scan then">and tap <b>Join game</b></div><div class="codelab">Room code</div><div class="bigcode">${esc(code)}</div></div>
         <div class="lob-players panel"><h3 id="lpc"></h3><div class="pbubbles" id="pbs"></div></div>`);
       const shown = new Map(); let ready = false;
       function update() {
@@ -7015,6 +7062,7 @@ function HostApp(code) {
 (async function boot() {
   const role = (URLP.get('role') || '').toLowerCase();
   const code = (URLP.get('room') || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4);
+  if (!role && !code) { LandingApp(); return; }   // the bare link: Join game / Host game (?role=join is the join page)
   const player = !['host', 'display', 'screen'].includes(role);
   // A play-anytime game's player page never loads the Firebase SDK: it reads the room's meta over a plain request
   // first, and an async room is played over plain requests from then on (no connection held; see createRestStore).
