@@ -148,14 +148,14 @@ const ITEMS = [
     name: "Grande Pumpkin Spice Latte",
     subtitle: "Starbucks · fall 2026",
     question: "What does a grande Pumpkin Spice Latte cost?",
-    price: 6.45,
+    price: 6.75,
     facts: [
       { q: "Was it always called the PSL?", a: "It was almost named the Fall Harvest Latte, and it had no real pumpkin in it until 2015." },
       { q: "How did they test the recipe?", a: "Starbucks developers tested it by pouring espresso shots over pumpkin pies and eating them." }
     ],
     reveal: "Back since August 25, and about 390 calories for a grande.",
     fine: "Starbucks app price for a grande",
-    recheck: "Estimate until checked: Starbucks doesn't post prices online. Look up a grande PSL for your nearest store in the Starbucks app.",
+    recheck: "Checked Oct 26, 2026: $6.75 before tax at the Marion Square Starbucks, Charleston (Starbucks app). Prices vary a little by store.",
     photo: "img/01-psl.jpg", photoFit: "cover",
     art: "psl"
   },
@@ -416,14 +416,14 @@ const ENCORE_ITEMS = [
     name: "An October Night at the Hawthorne Hotel",
     subtitle: "Salem, MA · average nightly rate",
     question: "What's the average nightly rate at Salem's Hawthorne Hotel in October?",
-    price: 605,
+    price: 624,
     unit: "avg. per night",
     facts: [
       { q: "Any famous guests?", a: "In 1970 the Bewitched cast stayed here while filming their Salem episodes, and for years people called asking if it was “the Bewitched hotel.”" },
       { q: "Is it really haunted?", a: "Room 325 is said to be the most haunted, and guests in Room 612 report a ghostly woman roaming the halls." }
     ],
     reveal: "The same hotel averages $169 a night in January.",
-    fine: "KAYAK price data, Sept 29, 2026",
+    fine: "KAYAK price data, Oct 26, 2026",
     recheck: "Reload the KAYAK Hawthorne page and update the October average if it moved.",
     link: "https://www.kayak.com/Salem-Hotels-Hawthorne-Hotel.15378.ksp",
     photo: "img/09-hawthorne.jpg", photoFit: "cover",
@@ -2040,7 +2040,7 @@ body:not(.role-landing):not([data-show-phase="lobby"]) .show-garland { opacity: 
 .fx-entered.enter, .fx-entered .pi-photo, .fx-entered .pdp-img { animation: none; }
 .btn { transition: transform .18s var(--show-ease), box-shadow .18s, filter .2s; }
 @media (hover: hover) and (pointer: fine) {
-  .btn:not(:disabled):hover { transform: translateY(-2px); filter: brightness(1.09); }
+  .btn:not(:disabled):hover { filter: brightness(1.09); }   /* no lift: a button that moves on hover flickers under a resting mouse */
   .btn:not(:disabled):active { transform: translateY(2px); }
   .opt:not(:disabled):hover { border-color: var(--pumpkin-hi); background: #ff7a1a12; }
 }
@@ -2092,6 +2092,14 @@ body:not(.role-landing):not([data-show-phase="lobby"]) .show-garland { opacity: 
 body.has-effects .p-wrap { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
 body.has-effects .p-gopill { bottom: calc(64px + env(safe-area-inset-bottom)); }
 body.role-host .fx-toggle { display: none; }
+/* The big screen is shared with everyone: its effects button hides with the sound and full-screen buttons
+   (3 seconds after the mouse stops) so it never sits on the Top guesses cards. Move the mouse to bring it back. */
+body.role-display .fx-toggle { transition: opacity .4s; }
+body.role-display.hide-cursor .fx-toggle { opacity: 0; pointer-events: none; }
+/* Phones and laptops: no effects button on the item and reveal pages, where it can sit on top of "Lock it in"
+   (a tap meant for the guess would switch the effects instead). It's on the join, lobby, intro, standings and results screens. */
+body.role-player[data-show-phase="item"] .fx-toggle, body.role-player[data-show-phase="reveal"] .fx-toggle { display: none; }
+body.role-player[data-show-phase="item"] .p-gopill, body.role-player[data-show-phase="reveal"] .p-gopill { bottom: calc(18px + env(safe-area-inset-bottom)); }
 html[data-effects="reduced"] *, html[data-effects="reduced"] *::before, html[data-effects="reduced"] *::after {
   animation-duration: .001ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important;
   transition-duration: .001ms !important; transition-delay: 0ms !important; scroll-behavior: auto !important; }
@@ -3368,8 +3376,8 @@ function encoreItems(room) {
   return encMemo.items;
 }
 /* ---------- play-anytime (async) rooms ----------
-   A room started with "New play-anytime game" keeps its own snapshot of the items (async/list: the live 10 in order,
-   then the encore pool's order) and of their prices (async/prices), so a live-game price edit never re-scores it and
+   A room started with "New play-anytime game" keeps its own snapshot of the items (async/list: the encore pool's order,
+   then the live 10 in order) and of their prices (async/prices), so a live-game price edit never re-scores it and
    an edit here never touches the live game. Only the last item doubles. */
 const ITEM_BY_ID = {};
 ITEMS.concat(ENCORE_ITEMS).forEach(it => { ITEM_BY_ID[it.id] = it; });
@@ -3384,8 +3392,9 @@ function asyncItems(room) {
   }
   return asyncMemo.items;
 }
-// The one bank there is today: the live 10, then the encore's 10 in the pool's order.
-const asyncBankIds = pool => ITEMS.map(it => it.id).concat(poolOrder(pool));
+// The one bank there is today: the encore's 10 first (in the pool's order), so anyone who played the meeting
+// game starts on items they haven't seen, then the live 10. The last item (the castle) doubles.
+const asyncBankIds = pool => poolOrder(pool).concat(ITEMS.map(it => it.id));
 // enc = true picks the encore's items, guesses and results; false (or left out) the live game's (or a play-anytime room's).
 const itemsOf = (room, enc) => enc ? encoreItems(room) : isAsync(room) ? asyncItems(room) : ITEMS;
 const resultsOf = (room, enc) => (enc ? room && room.encore && room.encore.results : room && room.results) || {};
@@ -6576,7 +6585,7 @@ function HostApp(code) {
     box.hidden = false;
     box.innerHTML = `<h2 class="hs-t">New Play-Anytime Game</h2>
       <p class="hs-lede">Everyone plays all ${n} items whenever they like. You share one link and keep an eye on who's played.</p>
-      <div class="set-row"><div class="sl">Items<small>The meeting's 10, then the encore's 10 (in the Encore pool's order). Prices are copied from Items &amp; prices now, and can be fixed in the game's console later.</small></div><span class="chip green hs-bank">${ICON.check} Live 10 + Encore 10 · ${n} items</span></div>
+      <div class="set-row"><div class="sl">Items<small>The encore's 10 first (in the Encore pool's order), so anyone who played the meeting game starts on new items, then the meeting's 10. Prices are copied from Items &amp; prices now, and can be fixed in the game's console later.</small></div><span class="chip green hs-bank">${ICON.check} Encore 10 + Live 10 · ${n} items</span></div>
       <div class="set-row"><div class="sl">Guess clock<small>Each item's own clock starts when the player opens it, so guesses stay gut guesses</small></div><div class="seg" role="group" aria-label="Guess clock" id="hsclock">${GAME.asyncClockChoices.map(v => `<button type="button" data-secs="${v}" class="${v === aSecs ? 'on' : ''}" aria-pressed="${v === aSecs}">${v ? v + 's' : 'No timer'}</button>`).join('')}</div></div>
       <div class="set-row"><div class="sl">Close time <span class="faint">(optional)</span><small>Leave it empty and everyone sees the standings so far the moment they finish. Set one and the results drop then (“Results drop Friday at 3 PM”, in each player's own time zone). You can set or change it later.</small></div><div class="hs-close"><input type="datetime-local" id="hsat" class="hs-dt" aria-label="Close time, Eastern"><span class="faint">Eastern</span></div></div>
       <div class="h-actions"><button class="btn slime big block" type="button" id="hscreate">Create the game</button><div class="sub"><span class="hint">You'll get the link and QR code next.</span><button class="btn ghost small" type="button" id="hscancel">Cancel</button></div></div>`;
